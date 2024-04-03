@@ -1,6 +1,6 @@
 ### Actividad: AAA en pruebas unitarias
 
-Vamos a crear un ejemplo de tarea que implica escribir pruebas unitarias siguiendo el patrón AAA para una clase `Calculador` simple`.
+Vamos a crear un ejemplo de tarea que implica escribir pruebas unitarias siguiendo el patrón AAA para una clase `Calculador` simple.
 Esta clase tendrá métodos para realizar operaciones básicas de matemáticas como sumar, restar, multiplicar y dividir.  
 El equipo debe escribir pruebas unitarias para cada uno de estos métodos usando JUnit 5, aplicando el patrón [AAA](https://java-design-patterns.com/patterns/arrange-act-assert/#explanation).
 
