@@ -4,9 +4,9 @@ Vamos a crear un ejemplo de tarea que implica escribir pruebas unitarias siguien
 Esta clase tendrá métodos para realizar operaciones básicas de matemáticas como sumar, restar, multiplicar y dividir.  
 El equipo debe escribir pruebas unitarias para cada uno de estos métodos usando JUnit 5, aplicando el patrón [AAA](https://java-design-patterns.com/patterns/arrange-act-assert/#explanation).
 
-Paso 1: Creación de la Clase  `Calculator`
+Paso 1: Creación de la Clase  `Calculador`
 
-Primero, proporcionamos el código de la clase Calculator que los estudiantes utilizarán como base para sus pruebas.
+Primero, proporcionamos el código de la clase `Calculador` que los estudiantes utilizarán como base para sus pruebas.
 
 ```
 public class Calculador {
@@ -51,7 +51,7 @@ public class CalculadorTest {
         int numeroB = 5;
 
         // Act
-        int resultado = calculador.add(numeroA, numeroB);
+        int resultado = calculador.suma(numeroA, numeroB);
 
         // Assert
         assertEquals(15, resultado, "10 + 5 deberia ser 15");
@@ -135,7 +135,7 @@ Paso 4: Entrega del proyecto
 
 La entrega final del proyecto debe incluir:
 
-* El código fuente completo de la clase `Calculator`.
+* El código fuente completo de la clase `Calculador`.
 * Las pruebas unitarias implementadas siguiendo el patrón AAA.
 * El archivo build.gradle configurado para usar JUnit 5.
 * Instrucciones breves sobre cómo construir y ejecutar las pruebas utilizando Gradle.
