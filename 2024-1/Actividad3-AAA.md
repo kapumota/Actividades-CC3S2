@@ -51,7 +51,7 @@ public class CalculadorTest {
         int numeroB = 5;
 
         // Act
-        int resultado = calculador.suma(numeroA, numeroB);
+        int resultado = calculador.sumar(numeroA, numeroB);
 
         // Assert
         assertEquals(15, resultado, "10 + 5 deberia ser 15");
