@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="towerdefense.TowerDefenseGameTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2024-06-30T14:55:08" hostname="lara" time="0.435">
+  <properties/>
+  <testcase name="testPlaceTower()" classname="towerdefense.TowerDefenseGameTest" time="0.435"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

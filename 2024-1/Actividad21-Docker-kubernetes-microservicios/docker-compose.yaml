@@ -1,0 +1,19 @@
+version: '3'
+services:
+  game:
+    build: .
+    networks:
+      - game-network
+    volumes:
+      - game-data:/app/data
+    container_name: tower-defense-container
+
+networks:
+  game-network:
+    driver: bridge
+
+volumes:
+  game-data:
+    driver: local
+
+
