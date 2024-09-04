@@ -30,6 +30,7 @@ jobs:
 
     - name: Run tests
       run: npm test
+      working-directory: 2024-2/Semana1/Actividad1-Introduccion/devops-practice
     
     - name: Run Docker container
       run: docker run -d -p 3001:3001 devops-practice
