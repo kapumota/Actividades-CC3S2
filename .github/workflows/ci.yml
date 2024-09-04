@@ -23,8 +23,9 @@ jobs:
     - name: Install dependencies
       run: npm install
     
-    - name: Build Docker image
-      run: docker build -t devops-practice .
+    - name: Build Docker image 
+      run: docker build -t devops-practice 2024-2/Semana1/Actividad1-Introduccion/devops-practice/.
+
 
     - name: Run tests
       run: npm test
