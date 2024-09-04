@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  app:
+    build: 2024-2/Semana1/Actividad1-Introduccion/devops-practice
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    container_name: devops-practice-container
