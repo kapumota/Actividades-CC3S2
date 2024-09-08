@@ -31,3 +31,33 @@ services:
   #   container_name: grafana  # Nombre del contenedor de Grafana
   #   restart: always  # Reiniciar el contenedor si falla
 
+
+  # Configuración actualizada con los cambios solicitados
+  # ----------------------------------------------------
+  
+  # app:
+  #   build: .
+  #   ports:
+  #     - "3001:3001"  # La aplicación Node.js expuesta en el puerto 3001
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3001  # Asegurar que la app esté usando el puerto 3001
+  #   container_name: devops-practice-container  # Nombre del contenedor de la aplicación
+
+  # prometheus:
+  #   image: prom/prometheus:latest  # Imagen de Prometheus
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Montar el archivo de configuración prometheus.yml
+  #   ports:
+  #     - "9090:9090"  # Exponer Prometheus en el puerto 9090
+  #   container_name: prometheus  # Nombre del contenedor de Prometheus
+  #   restart: always  # Reiniciar si el contenedor falla
+
+  # grafana:
+  #   image: grafana/grafana:latest  # Imagen de Grafana
+  #   ports:
+  #     - "3000:3000"  # Exponer Grafana en el puerto 3000
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin  # Contraseña por defecto para el acceso a Grafana
+  #   container_name: grafana  # Nombre del contenedor de Grafana
+  #   restart: always  # Reiniciar si el contenedor falla
