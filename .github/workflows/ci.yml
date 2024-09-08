@@ -25,23 +25,17 @@ jobs:
       run: npm install
       working-directory: 2024-2/Semana1/Actividad1-Introduccion/devops-practice
 
-    - name: Install Docker
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y docker.io
-        sudo apt-get install -y docker-compose  # Instalar Docker y Docker Compose
-        sudo usermod -aG docker $USER
-        newgrp docker
-
     - name: Build and run Docker Compose
-      run: docker-compose up --build -d
+      run: |
+        docker-compose up --build -d
       working-directory: 2024-2/Semana1/Actividad1-Introduccion/devops-practice
 
     - name: Run tests
       run: docker exec devops-practice-container npm test
 
     - name: Stop and clean Docker Compose
-      run: docker-compose down
+      run: |
+        docker-compose down
       working-directory: 2024-2/Semana1/Actividad1-Introduccion/devops-practice
 
     # Original commands, now commented out
