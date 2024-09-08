@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s # Intervalo de recolección de métricas
+
+scrape_configs:
+  - job_name: 'node-app'  # Nombre del trabajo para identificar las métricas de la aplicación
+    static_configs:
+      - targets: ['app:3001']  # Objetivo: la app está corriendo en el contenedor "app" en el puerto 3000
