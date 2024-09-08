@@ -4,7 +4,30 @@ services:
   app:
     build: .
     ports:
-      - "3001:3001"
+      - "3001:3001"  # La aplicación Node.js expuesta en el puerto 3001
     environment:
       - NODE_ENV=production
-    container_name: devops-practice-container
+    container_name: devops-practice-container  # Contenedor de la aplicación
+
+  # Agregado para monitoreo con Prometheus
+  # --------------------------------------
+  # prometheus:
+  #   image: prom/prometheus:latest  # Imagen de Prometheus
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Archivo de configuración prometheus.yml
+  #   ports:
+  #     - "9090:9090"  # Exponemos Prometheus en el puerto 9090
+  #   container_name: prometheus  # Nombre del contenedor de Prometheus
+  #   restart: always  # Reiniciar el contenedor si falla
+  
+  # Agregado para visualización con Grafana
+  # ---------------------------------------
+  # grafana:
+  #   image: grafana/grafana:latest  # Imagen de Grafana
+  #   ports:
+  #     - "3000:3000"  # Exponemos Grafana en el puerto 3000
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin  # Contraseña por defecto para el acceso a Grafana
+  #   container_name: grafana  # Nombre del contenedor de Grafana
+  #   restart: always  # Reiniciar el contenedor si falla
+
