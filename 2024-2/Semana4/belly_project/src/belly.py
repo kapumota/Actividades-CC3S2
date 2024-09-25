@@ -18,8 +18,8 @@ class Belly:
 
     def esta_gruñendo(self):
         # Verificar que ambas condiciones se cumplan correctamente:
-        # Se han esperado al menos 2 horas Y se han comido más de 10 pepinos
-        if self.tiempo_esperado >= 2 and self.pepinos_comidos > 10:
+        # Se han esperado al menos 1.5 horas Y se han comido más de 10 pepinos
+        if self.tiempo_esperado >= 1.5 and self.pepinos_comidos > 10:
             return True
         return False
 
