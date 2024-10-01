@@ -1,4 +1,6 @@
-Feature: Característica del Estómago
+# language: es
+
+Característica: Característica del Estómago
 
   Escenario: comer muchos pepinos y gruñir
     Dado que he comido 42 pepinos
