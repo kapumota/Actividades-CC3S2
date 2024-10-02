@@ -1053,7 +1053,7 @@ proyecto_behave/
 └── README.md
 ```
 
-### **2. Escribir el archivo `login.feature`**
+#### **2. Escribir el archivo `login.feature`**
 
 ```gherkin
 Feature: Autenticación de Usuarios
