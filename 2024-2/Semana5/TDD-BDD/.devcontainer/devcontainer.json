@@ -1,0 +1,39 @@
+{
+    "name": "Kapumota",
+    "dockerFile": "Dockerfile",
+    "context": "..",
+    "remoteUser": "kapumota",
+    "workspaceFolder": "/project",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/project,type=bind,consistency=delegated",
+    "runArgs": ["-h","kapumota"],
+    "remoteEnv": {
+        "FLASK_DEBUG": "true",
+        "FLASK_APP": "counter:app",
+        "PORT": "5000",
+        "PYTHONIOENCODING": "utf-8"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "VisualStudioExptTeam.vscodeintellicode",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "CucumberOpen.cucumber-official",
+                "hnw.vscode-auto-open-markdown-preview",
+                "donjayamanne.githistory",
+                "GitHub.vscode-pull-request-github",
+                "hbenl.vscode-test-explorer",
+                "njpwerner.autodocstring",
+                "cstrap.flask-snippets",
+                "wholroyd.jinja",
+                "redhat.vscode-yaml",
+                "ms-azuretools.vscode-docker",
+                "streetsidesoftware.code-spell-checker"
+            ]
+        }
+    },
+    "postCreateCommand": "sudo pip install -r requirements.txt",
+    "features": {
+        "docker-in-docker": "latest"
+    }
+}
