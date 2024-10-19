@@ -89,6 +89,17 @@ def test_is_empty():
     stack.push(5)
     assert stack.is_empty() == False  # Después de agregar un elemento, la pila no debe estar vacía
 ```
+Comprueba con este código tambien:
+
+```python
+def test_pop(self):
+    self.stack.push(3)
+    self.stack.push(5)
+    self.assertEqual(self.stack.pop(), 5)
+    self.assertEqual(self.stack.peek(), 3)
+    self.stack.pop()
+    self.assertTrue(self.stack.is_empty())
+```
 
 **Paso 4: Ejecuta pytest para verificar `is_empty()`**
 
@@ -114,6 +125,14 @@ def test_peek():
     assert stack.peek() == 2  # El valor superior debe ser el último agregado (2)
     assert stack.peek() == 2  # La pila no debe cambiar después de peek()
 ```
+Comprueba con este código tambien:
+
+```python
+def test_peek(self):
+    self.stack.push(3)
+    self.stack.push(5)
+    self.assertEqual(self.stack.peek(), 5)
+```
 
 **Paso 6: Escribiendo aserciones para el `método pop()`**
 
@@ -129,6 +148,18 @@ def test_pop():
     assert stack.pop() == 2  # El valor superior (2) debe eliminarse y devolverse
     assert stack.peek() == 1  # Después de pop(), el valor superior debe ser 1
 ```
+Comprueba con este código tambien:
+
+```python
+def test_pop(self):
+    self.stack.push(3)
+    self.stack.push(5)
+    self.assertEqual(self.stack.pop(), 5)
+    self.assertEqual(self.stack.peek(), 3)
+    self.stack.pop()
+    self.assertTrue(self.stack.is_empty())
+```
+
 **Paso 7: Escribiendo aserciones para el `método push()`**
 
 Finalmente, vamos a probar el método `push()`, que añade un valor a la pila.
@@ -142,6 +173,15 @@ def test_push():
     assert stack.peek() == 1  # El valor recién agregado debe estar en la parte superior
     stack.push(2)
     assert stack.peek() == 2  # Después de otro push, el valor superior debe ser el último agregado
+```
+Comprueba con este código tambien:
+
+```python
+ def test_push(self):
+    self.stack.push(3)
+    self.assertEqual(self.stack.peek(), 3)
+    self.stack.push(5)
+    self.assertEqual(self.stack.peek(), 5)
 ```
 
 **Paso 8: Ejecuta pytest para verificar todas las pruebas**
