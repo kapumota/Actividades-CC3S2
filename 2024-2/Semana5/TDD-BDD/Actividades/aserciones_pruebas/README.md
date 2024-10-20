@@ -2,6 +2,8 @@
 
 En esta actividad aprenderás cómo escribir aserciones de pruebas utilizando pytest y otros complementos actualizados.
 
+**Tiempo estimado necesario**: 30 minutos
+
 **Objetivos de aprendizaje**
 
 Después de completar esta actividad, serás capaz de:
