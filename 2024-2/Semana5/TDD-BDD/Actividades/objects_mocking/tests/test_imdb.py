@@ -1,11 +1,10 @@
 """
-Casos de prueba para Mocking
+Casos de prueba para Mocking Lab
 """
 import os
 import json
 import pytest
 import sys
-import os
 
 # Agregar el directorio raíz al sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -54,9 +53,10 @@ class TestIMDbDatabase:
     @patch('models.imdb.requests.get')
     def test_search_titles_failure(self, mock_get):
         """Prueba que la búsqueda de títulos maneja errores correctamente"""
-        # Configurar el mock para devolver una respuesta fallida
+        # Configurar el mock para devolver una respuesta fallida con json retornando {}
         mock_response = Mock(spec=Response)
         mock_response.status_code = 404
+        mock_response.json.return_value = {}
         mock_get.return_value = mock_response
 
         imdb = IMDb(apikey="fake_api_key")
