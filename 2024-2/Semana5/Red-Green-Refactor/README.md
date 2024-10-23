@@ -1,4 +1,4 @@
-### Actividad de Red-Green-Refactor para gestión de Uusuarios
+### Actividad de Red-Green-Refactor para gestión de usuarios
 
 **Objetivo:** Aprender y practicar el enfoque de Desarrollo Guiado por Pruebas (Test-Driven Development, TDD) utilizando la metodología Red-Green-Refactor. Implementaremos una clase `UserManager` para gestionar usuarios, asegurándonos de que cumpla con los requisitos especificados mediante pruebas unitarias.
 
