@@ -1731,7 +1731,224 @@ class UserManager:
         self.delete_user(target_username)
 ```
 
-**Ejemplo de varias iteraciones**
+### Ejemplo de varias iteraciones
+
+La funcionalidad que mejoraremos será una clase `ShoppingCart` que permite agregar artículos, eliminar artículos y calcular el total del carrito. El código será acumulativo, es decir, cada iteración se basará en la anterior.
+
+#### **Primera iteración (RGR 1): Agregar artículos al carrito**
+
+**1. Escribir una prueba que falle (Red)**
+
+Primero, escribimos una prueba para agregar un artículo al carrito. Dado que aún no hemos implementado la funcionalidad, esta prueba debería fallar.
+
+```python
+# test_shopping_cart.py
+import pytest
+from shopping_cart import ShoppingCart
+
+def test_add_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)  # nombre, cantidad, precio unitario
+    assert cart.items == {"apple": {"quantity": 2, "unit_price": 0.5}}
+```
+
+**2. Implementar el código para pasar la prueba (Green)**
+
+Implementamos la clase `ShoppingCart` con el método `add_item` para pasar la prueba.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+```
+
+**3. Refactorizar el código si es necesario (Refactor)**
+
+En este caso, el código es sencillo y no requiere refactorización inmediata. Sin embargo, podríamos anticipar mejoras futuras, como manejar múltiples adiciones del mismo artículo.
+
+#### **Segunda iteración (RGR 2): eliminar artículos del carrito**
+
+**1. Escribir una prueba que falle (Red)**
+
+Añadimos una prueba para eliminar un artículo del carrito.
+
+```python
+# test_shopping_cart.py
+def test_remove_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.remove_item("apple")
+    assert cart.items == {}
+```
+
+**2. Implementar el código para pasar la prueba (Green)**
+
+Añadimos el método `remove_item` a la clase `ShoppingCart`.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+```
+
+**3. Refactorizar el código si es necesario (Refactor)**
+
+Podemos mejorar el método `add_item` para manejar la adición de múltiples cantidades del mismo artículo.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+```
+
+#### **Tercera iteración (RGR 3): calcular el total del carrito**
+
+**1. Escribir una prueba que falle (Red)**
+
+Añadimos una prueba para calcular el total del carrito.
+
+```python
+# test_shopping_cart.py
+def test_calculate_total():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.add_item("banana", 3, 0.75)
+    total = cart.calculate_total()
+    assert total == 2*0.5 + 3*0.75  # 2*0.5 + 3*0.75 = 1 + 2.25 = 3.25
+```
+
+**2. Implementar el código para pasar la prueba (Green)**
+
+Implementamos el método `calculate_total`.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        total = 0
+        for item in self.items.values():
+            total += item["quantity"] * item["unit_price"]
+        return total
+```
+
+**3. Refactorizar el código si es necesario (Refactor)**
+
+Podemos optimizar el método `calculate_total` utilizando comprensión de listas y la función `sum`.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        return sum(item["quantity"] * item["unit_price"] for item in self.items.values())
+```
+
+#### **Código final acumulativo**
+
+**shopping_cart.py**
+
+```python
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        return sum(item["quantity"] * item["unit_price"] for item in self.items.values())
+```
+
+**test_shopping_cart.py**
+
+```python
+import pytest
+from shopping_cart import ShoppingCart
+
+def test_add_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)  # nombre, cantidad, precio unitario
+    assert cart.items == {"apple": {"quantity": 2, "unit_price": 0.5}}
+
+def test_remove_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.remove_item("apple")
+    assert cart.items == {}
+
+def test_calculate_total():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.add_item("banana", 3, 0.75)
+    total = cart.calculate_total()
+    assert total == 2*0.5 + 3*0.75  # 2*0.5 + 3*0.75 = 1 + 2.25 = 3.25
+```
+
+#### **Ejecutar las pruebas**
+
+Para ejecutar las pruebas, asegúrate de tener `pytest` instalado y ejecuta el siguiente comando en tu terminal:
+
+```bash
+pytest test_shopping_cart.py
+```
+Todas las pruebas deberían pasar, confirmando que la funcionalidad `ShoppingCart` funciona correctamente después de las tres iteraciones del proceso RGR.
+
+**Más interacciones**
 
 Se presenta un ejemplo avanzado que incluye **cuatro iteraciones** del proceso RGR (Red-Green-Refactor) utilizando Python y `pytest`. Continuaremos mejorando la funcionalidad de la clase `ShoppingCart`, añadiendo una nueva característica en cada iteración. Las funcionalidades a implementar serán:
 
