@@ -1731,6 +1731,357 @@ class UserManager:
         self.delete_user(target_username)
 ```
 
-**Actualizar las pruebas si es necesario**
+**Ejemplo de varias iteraciones**
 
-Asegúrate de que las pruebas siguen funcionando correctamente después de aplicar el decorador.
+Se presenta un ejemplo avanzado que incluye **cuatro iteraciones** del proceso RGR (Red-Green-Refactor) utilizando Python y `pytest`. Continuaremos mejorando la funcionalidad de la clase `ShoppingCart`, añadiendo una nueva característica en cada iteración. Las funcionalidades a implementar serán:
+
+1. **Agregar artículos al carrito**
+2. **Eliminar artículos del carrito**
+3. **Calcular el total del carrito**
+4. **Aplicar descuentos al total**
+
+El código será acumulativo, es decir, cada iteración se basará en la anterior.
+
+---
+
+#### **Primera iteración (RGR 1): Agregar artículos al carrito**
+
+**1. Escribir una prueba que falle (Red)**
+
+Comenzamos escribiendo una prueba para agregar un artículo al carrito. Dado que aún no hemos implementado la funcionalidad, esta prueba debería fallar.
+
+```python
+# test_shopping_cart.py
+import pytest
+from shopping_cart import ShoppingCart
+
+def test_add_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)  # nombre, cantidad, precio unitario
+    assert cart.items == {"apple": {"quantity": 2, "unit_price": 0.5}}
+```
+
+**2. Implementar el código para pasar la prueba (Green)**
+
+Implementamos la clase `ShoppingCart` con el método `add_item` para pasar la prueba.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+```
+
+**3. Refactorizar el código si es necesario (Refactor)**
+
+En este caso, el código es sencillo y no requiere refactorización inmediata. Sin embargo, podríamos anticipar mejoras futuras, como manejar múltiples adiciones del mismo artículo.
+
+---
+
+#### **Segunda iteración (RGR 2): eliminar artículos del carrito**
+
+**1. Escribir una prueba que falle (Red)**
+
+Añadimos una prueba para eliminar un artículo del carrito.
+
+```python
+# test_shopping_cart.py
+def test_remove_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.remove_item("apple")
+    assert cart.items == {}
+```
+
+**2. Implementar el código para pasar la prueba (Green)**
+
+Añadimos el método `remove_item` a la clase `ShoppingCart`.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+```
+
+**3. Refactorizar el código si es necesario (Refactor)**
+
+Podemos mejorar el método `add_item` para manejar la adición de múltiples cantidades del mismo artículo.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+```
+
+---
+
+#### **Tercera iteración (RGR 3): calcular el total del carrito**
+
+**1. Escribir una prueba que falle (Red)**
+
+Añadimos una prueba para calcular el total del carrito.
+
+```python
+# test_shopping_cart.py
+def test_calculate_total():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.add_item("banana", 3, 0.75)
+    total = cart.calculate_total()
+    assert total == 2*0.5 + 3*0.75  # 2*0.5 + 3*0.75 = 1 + 2.25 = 3.25
+```
+
+**2. Implementar el código para pasar la prueba (Green)**
+
+Implementamos el método `calculate_total`.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        total = 0
+        for item in self.items.values():
+            total += item["quantity"] * item["unit_price"]
+        return total
+```
+
+**3. Refactorizar el código si es necesario (Refactor)**
+
+Podemos optimizar el método `calculate_total` utilizando comprensión de listas y la función `sum`.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        return sum(item["quantity"] * item["unit_price"] for item in self.items.values())
+```
+
+---
+
+#### **Cuarta iteración (RGR 4): aplicar descuentos al total**
+
+**1. Escribir una prueba que falle (Red)**
+
+Añadimos una prueba para aplicar un descuento al total del carrito.
+
+```python
+# test_shopping_cart.py
+def test_apply_discount():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.add_item("banana", 3, 0.75)
+    cart.apply_discount(10)  # Descuento del 10%
+    total = cart.calculate_total()
+    expected_total = (2*0.5 + 3*0.75) * 0.9  # Aplicando 10% de descuento
+    assert total == expected_total
+```
+
+**2. Implementar el código para pasar la prueba (Green)**
+
+Añadimos el método `apply_discount` y ajustamos `calculate_total` para considerar el descuento.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+        self.discount = 0  # Porcentaje de descuento, por ejemplo, 10 para 10%
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        total = sum(item["quantity"] * item["unit_price"] for item in self.items.values())
+        if self.discount > 0:
+            total *= (1 - self.discount / 100)
+        return total
+    
+    def apply_discount(self, discount_percentage):
+        self.discount = discount_percentage
+```
+
+**3. Refactorizar el código si es necesario (Refactor)**
+
+Podemos mejorar la gestión de descuentos permitiendo múltiples descuentos acumulables o validando el porcentaje de descuento.
+
+Por simplicidad, mantendremos un único descuento y añadiremos validación para que el descuento esté entre 0 y 100.
+
+```python
+# shopping_cart.py
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+        self.discount = 0  # Porcentaje de descuento
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        total = sum(item["quantity"] * item["unit_price"] for item in self.items.values())
+        if self.discount > 0:
+            total *= (1 - self.discount / 100)
+        return round(total, 2)  # Redondear a 2 decimales
+    
+    def apply_discount(self, discount_percentage):
+        if 0 <= discount_percentage <= 100:
+            self.discount = discount_percentage
+        else:
+            raise ValueError("El porcentaje de descuento debe estar entre 0 y 100.")
+```
+
+---
+
+#### **Código final acumulativo**
+
+#### **shopping_cart.py**
+
+```python
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+        self.discount = 0  # Porcentaje de descuento
+    
+    def add_item(self, name, quantity, unit_price):
+        if name in self.items:
+            self.items[name]["quantity"] += quantity
+        else:
+            self.items[name] = {"quantity": quantity, "unit_price": unit_price}
+    
+    def remove_item(self, name):
+        if name in self.items:
+            del self.items[name]
+    
+    def calculate_total(self):
+        total = sum(item["quantity"] * item["unit_price"] for item in self.items.values())
+        if self.discount > 0:
+            total *= (1 - self.discount / 100)
+        return round(total, 2)  # Redondear a 2 decimales
+    
+    def apply_discount(self, discount_percentage):
+        if 0 <= discount_percentage <= 100:
+            self.discount = discount_percentage
+        else:
+            raise ValueError("El porcentaje de descuento debe estar entre 0 y 100.")
+```
+
+#### **test_shopping_cart.py**
+
+```python
+import pytest
+from shopping_cart import ShoppingCart
+
+def test_add_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)  # nombre, cantidad, precio unitario
+    assert cart.items == {"apple": {"quantity": 2, "unit_price": 0.5}}
+
+def test_remove_item():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.remove_item("apple")
+    assert cart.items == {}
+
+def test_calculate_total():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.add_item("banana", 3, 0.75)
+    total = cart.calculate_total()
+    assert total == 2*0.5 + 3*0.75  # 2*0.5 + 3*0.75 = 1 + 2.25 = 3.25
+
+def test_apply_discount():
+    cart = ShoppingCart()
+    cart.add_item("apple", 2, 0.5)
+    cart.add_item("banana", 3, 0.75)
+    cart.apply_discount(10)  # Descuento del 10%
+    total = cart.calculate_total()
+    expected_total = (2*0.5 + 3*0.75) * 0.9  # Aplicando 10% de descuento
+    assert total == round(expected_total, 2)  # Redondear a 2 decimales
+```
+
+#### **Ejecutar las Pruebas**
+
+Para ejecutar las pruebas, asegúrate de tener `pytest` instalado y ejecuta el siguiente comando en tu terminal:
+
+```bash
+pytest test_shopping_cart.py
+```
+
+Todas las pruebas deberían pasar, confirmando que la funcionalidad `ShoppingCart` funciona correctamente después de las cuatro iteraciones del proceso RGR.
+
+---
+
+#### **Explicación adicional**
+
+**Manejo de errores y validaciones:**
+
+En la cuarta iteración, añadimos validaciones al método `apply_discount` para asegurarnos de que el porcentaje de descuento esté dentro de un rango válido (0-100). Esto previene errores en tiempo de ejecución y asegura la integridad de los datos.
+
+**Redondeo del total:**
+
+Al calcular el total con descuento, redondeamos el resultado a dos decimales para representar de manera precisa valores monetarios, evitando problemas de precisión flotante.
+
+**Acumulación de funcionalidades:**
+
+Cada iteración del proceso RGR se basa en la anterior, permitiendo construir una clase `ShoppingCart` robusta y funcional paso a paso, garantizando que cada nueva característica se integra correctamente sin romper funcionalidades existentes.
