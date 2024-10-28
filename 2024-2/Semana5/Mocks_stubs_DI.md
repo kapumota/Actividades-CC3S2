@@ -1,12 +1,10 @@
-### Actividad:Pytest, Ccobertura de código, uso de Mocks, Stubs, Spies, Fakes e inyección de dependencias con API REST**
+### Actividad:Pytest, cobertura de código, uso de Mocks, Stubs, Spies, Fakes e inyección de dependencias con API REST
 
----
 
 #### **Introducción**
 
 En esta actividad, desarrollaremos una aplicación en Python que interactúa con una API REST. Implementaremos pruebas unitarias y de integración utilizando pytest, y exploraremos en detalle conceptos clave como mocks, stubs, spies, fakes e inyección de dependencias. Además, utilizaremos herramientas para medir la cobertura de código de nuestras pruebas.
 
----
 
 #### **Objetivos**
 
@@ -479,13 +477,665 @@ Analiza las líneas que no fueron cubiertas y considera si es necesario agregar 
 
 ---
 
+### **Nuevos ejercicios**
+
+#### **Ejercicio 1: Manejo de excepciones y pruebas de errores**
+
+Es importante asegurarse de que nuestra aplicación maneje adecuadamente los errores y excepciones que puedan ocurrir durante la interacción con la API. Vamos a modificar `api_client.py` para incluir manejo de errores más robusto y luego escribiremos pruebas para estos casos.
+
+##### **Actualización de `api_client.py`**
+
+```python
+import requests
+
+class APIClient:
+    def __init__(self, base_url, session=None):
+        self.base_url = base_url
+        self.session = session or requests.Session()
+
+    def get_todo(self, todo_id):
+        try:
+            response = self.session.get(f"{self.base_url}/todos/{todo_id}")
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            # Manejo de errores HTTP
+            raise Exception(f"HTTP error occurred: {http_err}") from http_err
+        except Exception as err:
+            # Manejo de otros errores
+            raise Exception(f"An error occurred: {err}") from err
+
+    # Métodos adicionales con manejo de errores similar...
+```
+
+##### **Prueba del manejo de excepciones**
+
+En `tests/test_api_client.py`, añadiremos una prueba para verificar que se manejen correctamente las excepciones cuando ocurre un error HTTP.
+
+```python
+def test_get_todo_not_found(mocker):
+    mock_session = mocker.Mock()
+    mock_response = mocker.Mock()
+    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Client Error: Not Found")
+    mock_session.get.return_value = mock_response
+
+    client = APIClient("https://example.com", session=mock_session)
+    
+    with pytest.raises(Exception) as exc_info:
+        client.get_todo(999)
+    assert "HTTP error occurred" in str(exc_info.value)
+```
+
+**Explicación:**
+
+- Utilizamos `mocker` para simular una sesión que lanza una excepción `HTTPError`.
+- Verificamos que nuestra aplicación captura y vuelve a lanzar la excepción con un mensaje personalizado.
+
+---
+
+#### **Ejercicio 2: Uso de fixtures en Pytest**
+
+Los fixtures en pytest nos permiten configurar el entorno para nuestras pruebas de una manera eficiente y reutilizable.
+
+##### **Implementación de fixtures**
+
+En `tests/conftest.py`, creamos fixtures para el `APIClient` y el `TodoService`.
+
+```python
+# tests/conftest.py
+import pytest
+from api_client import APIClient
+from todo_service import TodoService
+
+@pytest.fixture
+def api_client():
+    base_url = "https://example.com"
+    return APIClient(base_url)
+
+@pytest.fixture
+def todo_service(api_client):
+    return TodoService(api_client)
+```
+
+##### **Uso de fixtures en las pruebas**
+
+En `tests/test_todo_service.py`, modificamos las pruebas para utilizar los fixtures.
+
+```python
+def test_get_todo_details_with_fixture(mocker, todo_service):
+    mock_get_todo = mocker.patch.object(APIClient, 'get_todo', return_value={
+        "id": 1,
+        "title": "test todo",
+        "completed": False
+    })
+    todo = todo_service.get_todo_details(1)
+    assert todo["title"] == "Test Todo"
+    mock_get_todo.assert_called_once_with(1)
+```
+
+**Explicación:**
+
+- Usamos el fixture `todo_service` para obtener una instancia de `TodoService`.
+- Utilizamos `mocker.patch.object` para simular el método `get_todo` del `APIClient`.
+
+---
+
+#### **Ejercicio 3: Pruebas parametrizadas**
+
+Las pruebas parametrizadas nos permiten ejecutar la misma prueba con diferentes entradas y expectativas.
+
+##### **Implementación de pruebas parametrizadas**
+
+En `tests/test_api_client.py`, añadimos una prueba parametrizada.
+
+```python
+@pytest.mark.parametrize("todo_id,expected_title", [
+    (1, "Test Todo 1"),
+    (2, "Test Todo 2"),
+    (3, "Test Todo 3"),
+])
+def test_get_todo_parametrized(mocker, todo_id, expected_title):
+    mock_session = mocker.Mock()
+    mock_response = mocker.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": todo_id,
+        "title": expected_title,
+        "completed": False
+    }
+    mock_session.get.return_value = mock_response
+
+    client = APIClient("https://example.com", session=mock_session)
+    todo = client.get_todo(todo_id)
+    assert todo["title"] == expected_title
+```
+
+**Explicación:**
+
+- Utilizamos `@pytest.mark.parametrize` para definir múltiples casos de prueba.
+- La prueba se ejecutará tres veces con diferentes valores de `todo_id` y `expected_title`.
+
+---
+
+#### **Ejercicio 4: Mocking avanzado con patching**
+
+A veces es necesario simular funciones o métodos que son llamados dentro de los métodos que estamos probando.
+
+##### **Patching de métodos**
+
+En `tests/test_todo_service.py`, añadimos una prueba que utiliza `patch` para simular el método `update_todo`.
+
+```python
+from unittest.mock import patch
+
+def test_complete_todo_patching(mocker, todo_service):
+    mock_get_todo = mocker.patch.object(APIClient, 'get_todo', return_value={
+        "id": 1,
+        "title": "Incomplete Todo",
+        "completed": False
+    })
+    mock_update_todo = mocker.patch.object(APIClient, 'update_todo', return_value={
+        "id": 1,
+        "title": "Incomplete Todo",
+        "completed": True
+    })
+
+    todo = todo_service.complete_todo(1)
+    assert todo["completed"] == True
+    mock_get_todo.assert_called_once_with(1)
+    mock_update_todo.assert_called_once_with(1, {
+        "id": 1,
+        "title": "Incomplete Todo",
+        "completed": True
+    })
+```
+
+**Explicación:**
+
+- Utilizamos `mocker.patch.object` para simular los métodos `get_todo` y `update_todo` de `APIClient`.
+- Verificamos que los métodos fueron llamados con los argumentos correctos.
+
+---
+
+#### **Ejercicio 5: Generación de reportes de cobertura**
+
+Además de generar un reporte de cobertura en la consola, podemos crear reportes HTML que nos permiten navegar por el código y ver qué líneas fueron cubiertas.
+
+##### **Generación del reporte HTML**
+
+Ejecuta el siguiente comando:
+
+```
+pytest --cov=api_client --cov=todo_service --cov-report html tests/
+```
+
+Esto generará un directorio `htmlcov/` que contiene el reporte. Abre `htmlcov/index.html` en tu navegador para visualizarlo.
+
+---
+
+#### **Ejercicio 6: Pruebas asíncronas (opcional)**
+
+Si tu aplicación utiliza programación asíncrona (por ejemplo, con `asyncio`), puedes escribir pruebas asíncronas utilizando `pytest-asyncio`.
+
+##### **Implementación de un método asíncrono**
+
+Supongamos que queremos agregar un método asíncrono a `APIClient`:
+
+```python
+# En api_client.py
+import asyncio
+
+class APIClient:
+    # Métodos existentes...
+
+    async def async_get_todo(self, todo_id):
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, self.session.get, f"{self.base_url}/todos/{todo_id}")
+        response.raise_for_status()
+        return response.json()
+```
+
+##### **Prueba del método asíncrono**
+
+En `tests/test_api_client.py`:
+
+```python
+import pytest
+import asyncio
+
+@pytest.mark.asyncio
+async def test_async_get_todo(mocker):
+    mock_session = mocker.Mock()
+    mock_response = mocker.Mock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "id": 1,
+        "title": "Async Todo",
+        "completed": False
+    }
+    mock_session.get.return_value = mock_response
+
+    client = APIClient("https://example.com", session=mock_session)
+    todo = await client.async_get_todo(1)
+    assert todo["title"] == "Async Todo"
+```
+
+**Explicación:**
+
+- Utilizamos `@pytest.mark.asyncio` para indicar que la prueba es asíncrona.
+- Simulamos las llamadas asíncronas de manera similar a las síncronas.
+
+**Nota:** Para ejecutar pruebas asíncronas, necesitas instalar `pytest-asyncio`:
+
+```
+pip install pytest-asyncio
+```
+
+---
+
+#### **Ejercicio 7: Pruebas de rendimiento con pytest-benchmark (opcional)**
+
+Es posible que desees medir el rendimiento de ciertas partes de tu aplicación.
+
+##### **Instalación de pytest-benchmark**
+
+```
+pip install pytest-benchmark
+```
+
+##### **Implementación de una prueba de rendimiento**
+
+En `tests/test_performance.py`:
+
+```python
+def test_get_todo_performance(benchmark, mocker):
+    mock_session = mocker.Mock()
+    mock_response = mocker.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "id": 1,
+        "title": "Test Todo",
+        "completed": False
+    }
+    mock_session.get.return_value = mock_response
+
+    client = APIClient("https://example.com", session=mock_session)
+
+    def fetch_todo():
+        client.get_todo(1)
+
+    result = benchmark(fetch_todo)
+    assert result is None  # La función no retorna nada
+```
+
+**Explicación:**
+
+- Utilizamos el fixture `benchmark` para medir el tiempo de ejecución de `fetch_todo`.
+- Esto nos ayuda a identificar posibles problemas de rendimiento.
+
+---
+
+#### **Actualización de `requirements.txt`**
+
+Añade las nuevas dependencias:
+
+```
+pytest
+pytest-cov
+pytest-asyncio
+pytest-benchmark
+requests
+requests-mock
+```
+
+---
+Asegúrate de incluir instrucciones sobre cómo ejecutar las nuevas pruebas y sobre las nuevas dependencias.
+
+#### **Prácticas recomendadas**
+
+- **Automatización de pruebas:** Configura un entorno de integración continua (CI) para ejecutar tus pruebas automáticamente en cada cambio.
+- **Cobertura de código objetivo:** Apunta a una cobertura de código del 90% o más, pero recuerda que la calidad de las pruebas es más importante que el porcentaje.
+- **Documentación de pruebas:** Documenta tus casos de prueba y explica el propósito de cada uno, especialmente para pruebas complejas o no triviales.
+- **Reutilización de código de pruebas:** Utiliza fixtures y funciones auxiliares para evitar la duplicación de código en tus pruebas.
+- **Actualización continua:** Mantén tus dependencias y herramientas actualizadas para beneficiarte de las últimas mejoras y parches de seguridad.
+
+**Extensión de la Actividad: Ejercicios Adicionales sobre Herramientas Complementarias, Integración con Docker, Pruebas de Seguridad y Monitoreo en Producción**
+
+---
+
+#### **Ejercicio 1: Exploración de otras herramientas - uso de `hypothesis` para pruebas basadas en propiedades**
+
+##### **Objetivo**
+
+Aprender a utilizar `hypothesis`, una biblioteca de Python para pruebas basadas en propiedades, que genera datos de prueba de manera automática y explora casos que podrían no haberse considerado manualmente.
+
+#### **Instalación de hypothesis**
+
+Primero, instala `hypothesis`:
+
+```bash
+pip install hypothesis
+```
+
+#### **Implementación de pruebas basadas en propiedades**
+
+##### **Ejemplo: Prueba de la función `add_todo` con datos aleatorios**
+
+En `tests/test_todo_service.py`, agregamos una prueba utilizando `hypothesis`.
+
+```python
+from hypothesis import given, strategies as st
+from todo_service import TodoService
+from api_client import APIClient
+
+@given(title=st.text(min_size=1), completed=st.booleans())
+def test_add_todo_with_hypothesis(mocker, title, completed):
+    mock_api_client = mocker.Mock(spec=APIClient)
+    mock_api_client.create_todo.return_value = {
+        "id": 101,
+        "title": title,
+        "completed": completed
+    }
+    service = TodoService(mock_api_client)
+    new_todo = service.add_todo(title, completed)
+    assert new_todo["title"] == title
+    assert new_todo["completed"] == completed
+```
+
+**Explicación:**
+
+- Usamos `@given` para generar diferentes combinaciones de `title` y `completed`.
+- `st.text(min_size=1)` genera cadenas de texto con al menos un carácter.
+- `st.booleans()` genera valores booleanos `True` o `False`.
+- La prueba verifica que `add_todo` maneja correctamente diferentes entradas.
+
+#### **Beneficios de usar hypothesis**
+
+- **Cobertura amplia:** Genera automáticamente casos de prueba, incluyendo casos límite que podrían pasarse por alto.
+- **Detección de errores ocultos:** Puede encontrar errores que no son evidentes con pruebas manuales o parametrizadas.
+
+---
+
+#### **Ejercicio 2: Integración con Docker**
+
+##### **Objetivo**
+
+Ejecutar nuestras pruebas dentro de un contenedor Docker para garantizar la consistencia del entorno y facilitar la replicación en diferentes sistemas.
+
+##### **Creación de un Dockerfile**
+
+Crea un archivo `Dockerfile` en la raíz del proyecto:
+
+```dockerfile
+# Usamos una imagen base de Python
+FROM python:3.9-slim
+
+# Establecemos el directorio de trabajo
+WORKDIR /app
+
+# Copiamos los archivos de requerimientos y los instalamos
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copiamos todo el código de la aplicación
+COPY . .
+
+# Comando por defecto al iniciar el contenedor
+CMD ["pytest", "--cov=api_client", "--cov=todo_service", "tests/"]
+```
+
+#### **Construcción de la imagen Docker**
+
+Ejecuta el siguiente comando en la terminal:
+
+```bash
+docker build -t todo-app-test .
+```
+
+#### **Ejecución de las pruebas en Docker**
+
+Ejecuta el contenedor:
+
+```bash
+docker run --rm todo-app-test
+```
+
+**Explicación:**
+
+- **`docker build`:** Construye la imagen a partir del `Dockerfile`.
+- **`docker run`:** Ejecuta el contenedor basado en la imagen creada.
+- **`--rm`:** Elimina el contenedor después de que finalice la ejecución.
+
+
+---
+
+#### **Ejercicio 3: Pruebas de seguridad**
+
+##### **Objetivo**
+
+Implementar pruebas que verifiquen la seguridad de la aplicación, asegurando que está protegida contra vulnerabilidades comunes como inyecciones y ataques de denegación de servicio (DoS).
+
+#### **Implementación de pruebas de seguridad**
+
+##### **Prueba de inyección de código**
+
+En `tests/test_security.py`:
+
+```python
+def test_create_todo_injection_attempt(mocker):
+    malicious_title = "'; DROP TABLE todos; --"
+    mock_api_client = mocker.Mock(spec=APIClient)
+    mock_api_client.create_todo.return_value = {
+        "id": 102,
+        "title": malicious_title,
+        "completed": False
+    }
+    service = TodoService(mock_api_client)
+    new_todo = service.add_todo(malicious_title)
+    assert new_todo["title"] == malicious_title
+    # Verificamos que la entrada se maneja adecuadamente
+    mock_api_client.create_todo.assert_called_with({
+        'title': malicious_title,
+        'completed': False
+    })
+```
+
+**Explicación:**
+
+- Simulamos un intento de inyección SQL u otro tipo de inyección.
+- Verificamos que la aplicación trata el input como datos, no como código ejecutable.
+
+##### **Prueba de manejo de datos voluminosos (ataque DoS)**
+
+```python
+def test_create_todo_large_input(mocker):
+    large_title = 'A' * 1000000  # Cadena de 1 millón de caracteres
+    mock_api_client = mocker.Mock(spec=APIClient)
+    mock_api_client.create_todo.side_effect = Exception("Payload too large")
+    service = TodoService(mock_api_client)
+    with pytest.raises(Exception) as exc_info:
+        service.add_todo(large_title)
+    assert "Payload too large" in str(exc_info.value)
+```
+
+**Explicación:**
+
+- Probamos cómo la aplicación maneja entradas extremadamente grandes que podrían causar problemas de rendimiento o fallos.
+- Verificamos que se manejen adecuadamente las excepciones.
+
+#### **Herramientas especializadas para pruebas de seguridad**
+
+- **Bandit:** Analiza el código para encontrar vulnerabilidades comunes.
+  
+  Instalación:
+
+  ```bash
+  pip install bandit
+  ```
+
+  Uso:
+
+  ```bash
+  bandit -r .
+  ```
+
+- **OWASP ZAP:** Es una herramienta para pruebas de penetración de aplicaciones web.
+
+**Nota:** Las pruebas de seguridad más avanzadas suelen requerir herramientas y técnicas especializadas y deben realizarse con cuidado para no afectar sistemas en producción.
+
+---
+
+#### **Ejercicio 4: Monitoreo en producción**
+
+##### **Objetivo**
+
+Implementar herramientas de monitoreo en la aplicación para detectar y diagnosticar problemas en tiempo real una vez que está desplegada.
+
+#### **Implementación de logging y monitoreo básico**
+
+##### **Integración de logging en la aplicación**
+
+Actualiza `api_client.py`:
+
+```python
+import requests
+import logging
+
+# Configuración básica de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class APIClient:
+    # Métodos existentes...
+
+    def get_todo(self, todo_id):
+        logger.info(f"Obteniendo todo con ID {todo_id}")
+        try:
+            response = self.session.get(f"{self.base_url}/todos/{todo_id}")
+            response.raise_for_status()
+            logger.info(f"Todo obtenido: {response.json()}")
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            logger.error(f"Error HTTP: {http_err}")
+            raise Exception(f"HTTP error occurred: {http_err}") from http_err
+        except Exception as err:
+            logger.error(f"Error desconocido: {err}")
+            raise Exception(f"An error occurred: {err}") from err
+```
+
+**Explicación:**
+
+- Utilizamos el módulo `logging` para registrar información relevante sobre las operaciones y errores.
+- Esto facilita el monitoreo y diagnóstico de problemas en producción.
+
+##### **Uso de herramientas de monitoreo externas**
+
+- **Prometheus y Grafana:** Para monitoreo de métricas y visualización.
+- **Sentry:** Para monitoreo de errores en tiempo real.
+
+**Integración con Sentry**
+
+Instala el SDK de Sentry:
+
+```bash
+pip install sentry-sdk
+```
+
+Configura Sentry en tu aplicación:
+
+```python
+import sentry_sdk
+
+sentry_sdk.init(
+    dsn="TU_DSN_DE_SENTRY",
+    traces_sample_rate=1.0
+)
+```
+
+Ahora, cualquier excepción no capturada será reportada a Sentry, donde podrás monitorearla y analizarla.
+
+#### **Pruebas del monitoreo**
+
+Aunque el monitoreo es más relevante en producción, es buena práctica probar que los logs y las integraciones funcionan correctamente.
+
+En `tests/test_logging.py`:
+
+```python
+import logging
+from api_client import APIClient
+
+def test_logging(caplog, mocker):
+    caplog.set_level(logging.INFO)
+    mock_session = mocker.Mock()
+    mock_response = mocker.Mock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "id": 1,
+        "title": "Test Todo",
+        "completed": False
+    }
+    mock_session.get.return_value = mock_response
+
+    client = APIClient("https://example.com", session=mock_session)
+    client.get_todo(1)
+
+    assert "Obteniendo todo con ID 1" in caplog.text
+    assert "Todo obtenido: {'id': 1, 'title': 'Test Todo', 'completed': False}" in caplog.text
+```
+
+**Explicación:**
+
+- Utilizamos el fixture `caplog` de pytest para capturar los logs generados durante la prueba.
+- Verificamos que los mensajes de log esperados estén presentes.
+
+---
+
+#### **Actualización de `requirements.txt`**
+
+Añade las nuevas dependencias:
+
+```
+hypothesis
+bandit
+sentry-sdk
+```
+---
+
+#### **Integración con Docker**
+
+Para construir y ejecutar el contenedor Docker:
+
+```bash
+docker build -t todo-app-test .
+docker run --rm todo-app-test
+```
+
+#### **Pruebas de seguridad**
+
+Para ejecutar análisis de seguridad con Bandit:
+
+```bash
+bandit -r .
+```
+
+#### **Monitoreo con sentry**
+
+Asegúrate de configurar tu DSN de Sentry en el código antes de desplegar en producción.
+
+---
+
+### **Prácticas recomendadas adicionales**
+
+- **Automatización y CI/CD:** Integra tus pruebas y despliegues en pipelines automatizados usando herramientas como Jenkins, GitLab CI/CD o GitHub Actions.
+- **Documentación continua:** Mantén la documentación del proyecto actualizada, incluyendo cambios en la arquitectura, decisiones técnicas y configuraciones.
+- **Formación continua:** Mantente actualizado sobre nuevas herramientas y prácticas en el desarrollo y pruebas de software.
+- **Colaboración y revisión de código:** Fomenta la revisión de código entre pares para mejorar la calidad y compartir conocimientos.
+
+---
+
 #### **Recursos adicionales**
 
 - **Documentación de pytest:** https://docs.pytest.org/
 - **pytest-mock:** https://github.com/pytest-dev/pytest-mock
 - **requests-mock:** https://requests-mock.readthedocs.io/
 - **pytest-cov:** https://pytest-cov.readthedocs.io/
-
----
-
-¡Espero que esta actividad te sea de gran utilidad para comprender y aplicar prácticas avanzadas de pruebas en Python!
