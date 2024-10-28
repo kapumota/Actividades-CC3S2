@@ -42,8 +42,8 @@ Vemos que este es uno de los métodos mágicos que se llama para representar la 
 def test_repr():
     """Prueba la representación de una cuenta"""
     account = Account()
-    account.name = "Foo"
-    assert str(account) == "<Account 'Foo'>"
+    account.name = "kapu"
+    assert str(account) == "<Account 'Kapu'>"
 ```
 
 #### Paso 2: Línea faltante 30
