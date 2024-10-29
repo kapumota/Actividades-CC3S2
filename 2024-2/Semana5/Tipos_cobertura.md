@@ -1,4 +1,4 @@
-## Tipos de cobertura
+### Tipos de cobertura
 
 #### 1. Cobertura de sentencias (statement coverage)
 
@@ -1736,7 +1736,8 @@ La **cobertura de funciones** (también conocida como **cobertura de métodos**)
 
 **Fórmula:**
 
-\[ \text{Cobertura de Funciones (\%)} = \left( \frac{\text{Número de funciones ejecutadas}}{\text{Número total de funciones}} \right) \times 100 \]
+Cobertura de funciones (%) = (Número de funciones ejecutadas / Número total de funciones) × 100
+
 
 **Ventajas:**
 - Asegura que todas las funcionalidades públicas hayan sido probadas.
