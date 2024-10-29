@@ -81,7 +81,7 @@ Vemos que este es el método `to_dict()`. ¿Puedes pensar en un caso de prueba q
 def test_to_dict():
     """Prueba la conversión de una cuenta a diccionario"""
     # Seleccionar un índice aleatorio válido
-    random_key = random.randint(0, len(ACCOUNT_DATA) - 1)
+    random_key = random.randint(0, len(ACCOUNT_DATA) - 1)# usa import random
     # Obtener los datos de la cuenta seleccionada
     data = ACCOUNT_DATA[random_key]
     
