@@ -1034,7 +1034,7 @@ class DataProcessor:
 
 **Líneas de código:** 56
 
-### **Pruebas con Pytest (`test_data_processor.py`)**
+#### **Pruebas con Pytest (`test_data_processor.py`)**
 
 Las pruebas a continuación están diseñadas para cubrir múltiples caminos de ejecución en `data_processor.py`, lo que influye directamente en la complejidad ciclomática.
 
@@ -1213,7 +1213,7 @@ def test_process_with_mixed_valid_invalid():
 
 **Líneas de prueba:** 56
 
-### **Análisis de la complejidad ciclomática**
+#### **Análisis de la complejidad ciclomática**
 
 Para calcular la complejidad ciclomática del archivo `data_processor.py`, podemos utilizar herramientas como `radon`. A continuación, se muestra cómo hacerlo.
 
@@ -2391,7 +2391,7 @@ ecommerce_platform/
 
 #### Ejercicio 4: Sistema de gestión de hospital
 
-### **Descripción**
+#### **Descripción**
 
 Crea un **sistema de gestión de hospital** que permita gestionar pacientes, médicos, citas y tratamientos. El sistema debe manejar las relaciones entre pacientes y médicos, y gestionar el historial de tratamientos.
 
