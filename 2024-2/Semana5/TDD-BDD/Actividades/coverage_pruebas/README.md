@@ -143,15 +143,30 @@ Vemos que este es el método `from_dict()`. ¿Puedes pensar en un caso de prueba
 #### Solución paso 3
 
 ```python
-def test_from_dict():
+def test_from_dict(self):
     """Prueba establecer atributos de una cuenta desde un diccionario"""
-    data = ACCOUNT_DATA[random_key]  # obtener una cuenta aleatoria
+    # Seleccionar un índice aleatorio válido
+    random_key = random.randint(0, len(ACCOUNT_DATA) - 1) # usa import random
+    
+    # Obtener los datos de la cuenta seleccionada
+    data = ACCOUNT_DATA[random_key]
+    
+    # Crear una instancia de Account sin establecer atributos
     account = Account()
+    
+    # Utilizar el método from_dict() para establecer los atributos desde el diccionario
     account.from_dict(data)
-    assert account.name == data["name"]
-    assert account.email == data["email"]
-    assert account.phone_number == data["phone_number"]
-    assert account.disabled == data["disabled"]
+    
+    # Verificar que los atributos de la instancia coinciden con los valores del diccionario
+    assert account.name == data["name"], f"Nombre esperado: {data['name']}, obtenido: {account.name}"
+    assert account.email == data["email"], f"Email esperado: {data['email']}, obtenido: {account.email}"
+    assert account.phone_number == data["phone_number"], f"Número de teléfono esperado: {data['phone_number']}, obtenido: {account.phone_number}"
+    assert account.disabled == data["disabled"], f"Estado 'disabled' esperado: {data['disabled']}, obtenido: {account.disabled}"
+    
+    # Opcional: Verificar que 'date_joined' no ha sido establecido por from_dict()
+    # ya que este campo generalmente se establece automáticamente al crear la cuenta
+    assert account.date_joined is None, f"'date_joined' debería ser None, obtenido: {account.date_joined}"
+
 ```
 
 #### Paso 4: Líneas faltantes 45-48
@@ -192,15 +207,47 @@ Vemos que este es el método `update()`. ¿Puedes pensar en un caso de prueba qu
 
 ```python
 def test_update_account():
-    """Prueba la actualización de una cuenta utilizando datos conocidos"""
-    data = ACCOUNT_DATA[random_key]  # obtener una cuenta aleatoria
-    account = Account(**data)
-    account.create()
-    assert account.id is not None
-    account.name = "Rumpelstiltskin"
-    account.update()
-    found = Account.find(account.id)
-    assert found.name == account.name
+  """Prueba la actualización de una cuenta utilizando datos conocidos"""
+  # Seleccionar un índice aleatorio válido
+  random_key = random.randint(0, len(ACCOUNT_DATA) - 1)
+        
+  # Obtener los datos de la cuenta seleccionada
+  data = ACCOUNT_DATA[random_key]
+        
+  # Crear una instancia de Account con los datos seleccionados
+  account = Account(**data)
+        
+  # Guardar la cuenta en la base de datos
+  account.create()
+        
+  # Verificar que la cuenta ha sido asignada un ID
+  assert account.id is not None, "La cuenta no fue creada correctamente y no tiene un ID asignado."
+        
+  # Modificar uno de los atributos de la cuenta
+  original_name = account.name
+  account.name = "Rumpelstiltskin"
+        
+  # Ejecutar el método update() para guardar los cambios en la base de datos
+  account.update()
+        
+  # Recuperar la cuenta actualizada desde la base de datos
+  found_account, _ = Account.find(account.id)
+        
+  # Verificar que el atributo 'name' ha sido actualizado correctamente
+  assert found_account.name == account.name, (
+            f"Se esperaba que el nombre fuera '{account.name}', pero se obtuvo '{found_account.name}'."
+        )
+        
+  # Verificar que otros atributos no han sido alterados
+  assert found_account.email == data["email"], (
+            f"El email no debería haber cambiado. Se esperaba '{data['email']}', pero se obtuvo '{found_account.email}'."
+        )
+  assert found_account.phone_number == data["phone_number"], (
+            f"El número de teléfono no debería haber cambiado. Se esperaba '{data['phone_number']}', pero se obtuvo '{found_account.phone_number}'."
+        )
+  assert found_account.disabled == data["disabled"], (
+            f"El estado 'disabled' no debería haber cambiado. Se esperaba '{data['disabled']}', pero se obtuvo '{found_account.disabled}'."
+        )
 ```
 
 #### Paso 5: Línea faltante 47
@@ -233,7 +280,7 @@ if not self.id:
 
 Vemos que la línea `47` solo se ejecuta si el método `update()` se llama con un `id` que es `None`. ¿Puedes pensar en un caso de prueba que ejecute el método `update()` y cause que esta línea de código se ejecute?
 
-#### Solución paso 5
+#### Completa el paso 5
 
 ```python
 import pytest
@@ -241,7 +288,7 @@ from models.account import Account, DataValidationError
 
 def test_update_invalid_id():
     """Prueba la actualización de una cuenta con ID inválido"""
-    data = ACCOUNT_DATA[random_key]  # obtener una cuenta aleatoria
+    data = ACCOUNT_DATA[random_key]  
     account = Account(**data)
     account.id = None
     with pytest.raises(DataValidationError):
@@ -279,7 +326,7 @@ def delete(self):
 
 Vemos que las líneas `52-54` corresponden al método `delete()`. ¿Puedes pensar en un caso de prueba que ejecute el método `delete()` en una cuenta?
 
-#### Solución paso 6
+#### Completa el paso 6
 
 ```python
 def test_delete_account():
