@@ -2110,3 +2110,506 @@ La **cobertura de funciones** es una métrica útil para asegurar que todas las 
 Implementar estas métricas en conjunto proporciona una visión integral de la calidad del código y la efectividad de las pruebas. Es recomendable integrar herramientas como `radon` y `pytest-cov` en el flujo de trabajo de desarrollo y **Integración Continua (CI)** para monitorear continuamente estas métricas y mantener altos estándares de calidad en el software.
 
 Recuerda que, aunque las métricas de cobertura son indicadores valiosos, deben complementarse con otras prácticas de aseguramiento de calidad, como revisiones de código, pruebas de integración y pruebas de aceptación de usuario, para obtener una evaluación completa de la salud y fiabilidad del sistema.
+
+---
+### Ejercicios
+
+#### Ejercicio 1: Sistema de gestión de inventario
+
+#### **Descripción**
+
+Desarrolla un **sistema de gestión de inventario** para una tienda que permita gestionar productos, proveedores y órdenes de compra. El sistema debe permitir añadir, actualizar, eliminar y consultar productos y proveedores, así como gestionar las órdenes de compra.
+
+### **Requisitos**
+
+1. **Módulo `product.py`:**
+   - Clase `Product` con atributos: `id`, `name`, `description`, `price`, `quantity_in_stock`.
+   - Métodos:
+     - `update_price(new_price)`: Actualiza el precio del producto.
+     - `update_quantity(new_quantity)`: Actualiza la cantidad en stock.
+     - `summary()`: Retorna un resumen del producto.
+   - Validaciones:
+     - El precio y la cantidad deben ser valores positivos.
+     - El nombre y la descripción deben ser cadenas no vacías.
+
+2. **Módulo `supplier.py`:**
+   - Clase `Supplier` con atributos: `id`, `name`, `contact_info`, `products_supplied`.
+   - Métodos:
+     - `add_product(product_id)`: Añade un producto suministrado.
+     - `remove_product(product_id)`: Elimina un producto suministrado.
+     - `summary()`: Retorna un resumen del proveedor.
+   - Validaciones:
+     - El nombre y la información de contacto deben ser cadenas no vacías.
+     - Los IDs de productos deben existir en el inventario.
+
+3. **Módulo `purchase_order.py`:**
+   - Clase `PurchaseOrder` con atributos: `order_id`, `supplier`, `order_items`, `status`.
+   - Métodos:
+     - `create_order(supplier_id, items)`: Crea una nueva orden de compra.
+     - `update_status(new_status)`: Actualiza el estado de la orden.
+     - `summary()`: Retorna un resumen de la orden.
+   - Validaciones:
+     - El proveedor debe existir.
+     - Los artículos deben estar disponibles en stock.
+     - El estado debe ser uno de los permitidos (e.g., 'pendiente', 'completada', 'cancelada').
+
+4. **Módulo `inventory_manager.py`:**
+   - Clase `InventoryManager` que integra los módulos anteriores.
+   - Métodos:
+     - `manage_products()`: Permite añadir, actualizar, eliminar y consultar productos.
+     - `manage_suppliers()`: Permite añadir, actualizar, eliminar y consultar proveedores.
+     - `manage_purchase_orders()`: Permite gestionar órdenes de compra.
+     - `generate_reports()`: Genera reportes de inventario y órdenes.
+   - Validaciones:
+     - Asegura la integridad de las relaciones entre productos y proveedores.
+
+5. **Pruebas con Pytest:**
+   - Escribe un conjunto completo de pruebas para cubrir todas las funcionalidades.
+   - Asegúrate de cubrir los siguientes tipos de cobertura:
+     - **Cobertura de sentencias**
+     - **Cobertura de ramas**
+     - **Cobertura de condiciones**
+     - **Cobertura de condición/decisión modificada (MC/DC)**
+     - **Cobertura de camino**
+   - Analiza la **complejidad ciclomática** de cada método.
+   - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
+
+#### **Recomendaciones**
+
+- Utiliza `pytest-cov` para medir la cobertura de código.
+- Emplea `radon` para analizar la complejidad ciclomática de los métodos.
+- Diseña las pruebas para cubrir tanto casos exitosos como excepciones y validaciones.
+- Integra las pruebas en un flujo de **Integración Continua (CI)** para mantener una alta cobertura constantemente.
+
+#### **Estructura Sugerida**
+
+```
+inventory_management/
+├── inventory_management/
+│   ├── __init__.py
+│   ├── product.py
+│   ├── supplier.py
+│   ├── purchase_order.py
+│   └── inventory_manager.py
+├── tests/
+│   ├── __init__.py
+│   └── test_inventory_manager.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+#### Ejercicio 2: Aplicación de reserva de vuelos
+
+#### **Descripción**
+
+Crea una **aplicación de reserva de vuelos** que permita a los usuarios buscar vuelos, reservar asientos, cancelar reservas y gestionar usuarios. La aplicación debe manejar las interacciones entre usuarios y vuelos, asegurando la disponibilidad y la correcta gestión de reservas.
+
+#### **Requisitos**
+
+1. **Módulo `flight.py`:**
+   - Clase `Flight` con atributos: `flight_number`, `origin`, `destination`, `departure_time`, `arrival_time`, `seats_available`, `seat_map`.
+   - Métodos:
+     - `reserve_seat(seat_number)`: Reserva un asiento específico.
+     - `cancel_reservation(seat_number)`: Cancela la reserva de un asiento.
+     - `summary()`: Retorna un resumen del vuelo.
+   - Validaciones:
+     - El asiento debe estar disponible para ser reservado.
+     - El asiento debe existir en el mapa de asientos.
+
+2. **Módulo `user.py`:**
+   - Clase `User` con atributos: `user_id`, `name`, `email`, `password`, `reservations`.
+   - Métodos:
+     - `register(name, email, password)`: Registra un nuevo usuario.
+     - `authenticate(email, password)`: Autentica al usuario.
+     - `update_info(name, email)`: Actualiza la información del usuario.
+     - `add_reservation(flight_number, seat_number)`: Añade una reserva.
+     - `cancel_reservation(flight_number, seat_number)`: Cancela una reserva.
+   - Validaciones:
+     - El email debe ser único y válido.
+     - La contraseña debe cumplir con requisitos mínimos.
+
+3. **Módulo `reservation.py`:**
+   - Clase `Reservation` con atributos: `reservation_id`, `user`, `flight`, `seat_number`, `status`.
+   - Métodos:
+     - `create_reservation(user, flight, seat_number)`: Crea una nueva reserva.
+     - `cancel_reservation()`: Cancela una reserva existente.
+     - `summary()`: Retorna un resumen de la reserva.
+   - Validaciones:
+     - El usuario y el vuelo deben existir.
+     - El asiento debe estar disponible en el vuelo.
+
+4. **Módulo `flight_reservation_system.py`:**
+   - Clase `FlightReservationSystem` que integra los módulos anteriores.
+   - Métodos:
+     - `search_flights(origin, destination, date)`: Busca vuelos disponibles.
+     - `reserve_seat(user_id, flight_number, seat_number)`: Reserva un asiento.
+     - `cancel_reservation(user_id, reservation_id)`: Cancela una reserva.
+     - `manage_users()`: Gestiona el registro y actualización de usuarios.
+   - Validaciones:
+     - Asegura que las reservas no excedan la capacidad del vuelo.
+     - Gestiona la autenticación y autorización de usuarios.
+
+5. **Pruebas con Pytest:**
+   - Desarrolla un conjunto exhaustivo de pruebas para cubrir todas las funcionalidades.
+   - Asegúrate de cubrir los siguientes tipos de cobertura:
+     - **Cobertura de sentencias**
+     - **Cobertura de ramas**
+     - **Cobertura de condiciones**
+     - **Cobertura de condición/decisión modificada (MC/DC)**
+     - **Cobertura de camino**
+   - Analiza la **complejidad ciclomática** de cada método.
+   - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
+
+#### **Recomendaciones**
+
+- Implementa mecanismos de autenticación seguros para gestionar el acceso de usuarios.
+- Utiliza estructuras de datos eficientes para manejar grandes cantidades de vuelos y reservas.
+- Diseña las pruebas para simular escenarios reales, incluyendo reservas exitosas, intentos de reservas en asientos ocupados y cancelaciones.
+
+#### **Estructura sugerida**
+
+```
+flight_reservation_system/
+├── flight_reservation_system/
+│   ├── __init__.py
+│   ├── flight.py
+│   ├── user.py
+│   ├── reservation.py
+│   └── flight_reservation_system.py
+├── tests/
+│   ├── __init__.py
+│   └── test_flight_reservation_system.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+#### Ejercicio 3: Plataforma de comercio electrónico
+
+#### **Descripción**
+
+Desarrolla una **Plataforma de Comercio Electrónico** que permita a los usuarios navegar productos, añadir productos al carrito, realizar compras y gestionar sus cuentas. La plataforma debe manejar la interacción entre productos, usuarios y órdenes de compra, asegurando la correcta gestión de inventario y transacciones.
+
+#### **Requisitos**
+
+1. **Módulo `product.py`:**
+   - Clase `Product` con atributos: `id`, `name`, `description`, `price`, `stock`.
+   - Métodos:
+     - `update_stock(new_stock)`: Actualiza el stock del producto.
+     - `apply_discount(discount_percentage)`: Aplica un descuento al precio del producto.
+     - `summary()`: Retorna un resumen del producto.
+   - Validaciones:
+     - El precio y el stock deben ser valores positivos.
+     - El nombre y la descripción deben ser cadenas no vacías.
+
+2. **Módulo `user.py`:**
+   - Clase `User` con atributos: `user_id`, `username`, `email`, `password`, `cart`.
+   - Métodos:
+     - `register(username, email, password)`: Registra un nuevo usuario.
+     - `login(email, password)`: Autentica al usuario.
+     - `update_info(username, email)`: Actualiza la información del usuario.
+     - `add_to_cart(product_id, quantity)`: Añade un producto al carrito.
+     - `remove_from_cart(product_id, quantity)`: Elimina un producto del carrito.
+     - `checkout()`: Realiza la compra de los productos en el carrito.
+   - Validaciones:
+     - El email debe ser único y válido.
+     - La contraseña debe cumplir con requisitos mínimos.
+     - Las cantidades deben ser positivas y no exceder el stock disponible.
+
+3. **Módulo `cart.py`:**
+   - Clase `Cart` con atributos: `items` (diccionario de `product_id` y `quantity`).
+   - Métodos:
+     - `add_item(product_id, quantity)`: Añade un producto al carrito.
+     - `remove_item(product_id, quantity)`: Elimina un producto del carrito.
+     - `calculate_total()`: Calcula el total de la compra.
+     - `clear_cart()`: Limpia el carrito de compras.
+   - Validaciones:
+     - Las cantidades deben ser positivas.
+     - Verifica la disponibilidad del stock al añadir o eliminar productos.
+
+4. **Módulo `order.py`:**
+   - Clase `Order` con atributos: `order_id`, `user`, `order_items`, `total_amount`, `status`.
+   - Métodos:
+     - `create_order(user, order_items)`: Crea una nueva orden.
+     - `process_payment(payment_info)`: Procesa el pago de la orden.
+     - `update_status(new_status)`: Actualiza el estado de la orden.
+     - `summary()`: Retorna un resumen de la orden.
+   - Validaciones:
+     - El pago debe ser exitoso para completar la orden.
+     - Las cantidades deben estar disponibles en el stock al procesar la orden.
+
+5. **Módulo `ecommerce_platform.py`:**
+   - Clase `EcommercePlatform` que integra los módulos anteriores.
+   - Métodos:
+     - `manage_products()`: Gestiona la creación, actualización y eliminación de productos.
+     - `manage_users()`: Gestiona el registro y actualización de usuarios.
+     - `manage_orders()`: Gestiona las órdenes de compra.
+     - `generate_reports()`: Genera reportes de ventas, productos más vendidos y usuarios activos.
+   - Validaciones:
+     - Asegura la integridad de las relaciones entre usuarios, productos y órdenes.
+
+6. **Pruebas con Pytest:**
+   - Desarrolla un conjunto exhaustivo de pruebas para cubrir todas las funcionalidades.
+   - Asegúrate de cubrir los siguientes tipos de cobertura:
+     - **Cobertura de sentencias**
+     - **Cobertura de ramas**
+     - **Cobertura de condiciones**
+     - **Cobertura de condición/decisión modificada (MC/DC)**
+     - **Cobertura de camino**
+   - Analiza la **Complejidad ciclomática** de cada método.
+   - Mide la **Cobertura de funciones** para asegurar que todas las funciones han sido probadas.
+
+#### **Recomendaciones**
+
+- Implementa mecanismos de autenticación seguros para gestionar el acceso de usuarios.
+- Utiliza estructuras de datos eficientes para manejar grandes cantidades de productos y órdenes.
+- Diseña las pruebas para simular flujos de usuario completos, desde la navegación de productos hasta la realización de una compra.
+- Considera el uso de mocks para simular interacciones con servicios externos como pasarelas de pago.
+
+#### **Estructura sugerida**
+
+```
+ecommerce_platform/
+├── ecommerce_platform/
+│   ├── __init__.py
+│   ├── product.py
+│   ├── user.py
+│   ├── cart.py
+│   ├── order.py
+│   └── ecommerce_platform.py
+├── tests/
+│   ├── __init__.py
+│   └── test_ecommerce_platform.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+#### Ejercicio 4: Sistema de gestión de hospital
+
+### **Descripción**
+
+Crea un **sistema de gestión de hospital** que permita gestionar pacientes, médicos, citas y tratamientos. El sistema debe manejar las relaciones entre pacientes y médicos, y gestionar el historial de tratamientos.
+
+### **Requisitos**
+
+1. **Módulo `patient.py`:**
+   - Clase `Patient` con atributos: `patient_id`, `name`, `dob`, `medical_history`.
+   - Métodos:
+     - `update_info(name, dob)`: Actualiza la información del paciente.
+     - `add_medical_history(entry)`: Añade una entrada al historial médico.
+     - `summary()`: Retorna un resumen del paciente.
+   - Validaciones:
+     - El nombre debe ser una cadena no vacía.
+     - La fecha de nacimiento debe ser una fecha válida.
+
+2. **Módulo `doctor.py`:**
+   - Clase `Doctor` con atributos: `doctor_id`, `name`, `specialization`, `available_slots`.
+   - Métodos:
+     - `add_available_slot(slot)`: Añade una disponibilidad de cita.
+     - `remove_available_slot(slot)`: Elimina una disponibilidad de cita.
+     - `summary()`: Retorna un resumen del médico.
+   - Validaciones:
+     - La especialización debe ser una cadena válida.
+     - Las disponibilidades deben estar en un formato de fecha y hora adecuado.
+
+3. **Módulo `appointment.py`:**
+   - Clase `Appointment` con atributos: `appointment_id`, `patient`, `doctor`, `datetime`, `status`.
+   - Métodos:
+     - `schedule()`: Programa una cita.
+     - `cancel()`: Cancela una cita.
+     - `summary()`: Retorna un resumen de la cita.
+   - Validaciones:
+     - La cita debe estar en un horario disponible del médico.
+     - La cita no debe exceder la capacidad del médico.
+
+4. **Módulo `treatment.py`:**
+   - Clase `Treatment` con atributos: `treatment_id`, `patient`, `doctor`, `description`, `date`.
+   - Métodos:
+     - `record_treatment(description, date)`: Registra un nuevo tratamiento.
+     - `update_treatment(description)`: Actualiza la descripción del tratamiento.
+     - `summary()`: Retorna un resumen del tratamiento.
+   - Validaciones:
+     - La descripción debe ser una cadena no vacía.
+     - La fecha debe ser una fecha válida.
+
+5. **Módulo `hospital_management.py`:**
+   - Clase `HospitalManagement` que integra los módulos anteriores.
+   - Métodos:
+     - `manage_patients()`: Gestiona la creación, actualización y eliminación de pacientes.
+     - `manage_doctors()`: Gestiona la creación, actualización y eliminación de médicos.
+     - `manage_appointments()`: Gestiona el agendamiento y cancelación de citas.
+     - `manage_treatments()`: Gestiona el registro y actualización de tratamientos.
+     - `generate_reports()`: Genera reportes de pacientes, médicos, citas y tratamientos.
+   - Validaciones:
+     - Asegura la integridad de las relaciones entre pacientes, médicos, citas y tratamientos.
+
+6. **Pruebas con Pytest:**
+   - Desarrolla un conjunto exhaustivo de pruebas para cubrir todas las funcionalidades.
+   - Asegúrate de cubrir los siguientes tipos de cobertura:
+     - **Cobertura de sentencias**
+     - **Cobertura de ramas**
+     - **Cobertura de condiciones**
+     - **Cobertura de condición/decisión modificada (MC/DC)**
+     - **Cobertura de camino**
+   - Analiza la **complejidad ciclomática** de cada método.
+   - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
+
+#### **Recomendaciones**
+
+- Implementa mecanismos de autenticación y autorización para proteger la información sensible.
+- Utiliza bases de datos o estructuras de datos adecuadas para almacenar la información de pacientes y médicos.
+- Diseña las pruebas para cubrir escenarios de flujo completo, incluyendo la gestión de citas y tratamientos.
+
+#### **Estructura sugerida**
+
+```
+hospital_management/
+├── hospital_management/
+│   ├── __init__.py
+│   ├── patient.py
+│   ├── doctor.py
+│   ├── appointment.py
+│   ├── treatment.py
+│   └── hospital_management.py
+├── tests/
+│   ├── __init__.py
+│   └── test_hospital_management.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+#### Ejercicio 5: Sistema de gestión de educación en línea
+
+#### **Descripción**
+
+Desarrolla un **sistema de gestión de educación en línea** que permita a los instructores crear cursos, gestionar lecciones, y a los estudiantes inscribirse y completar cursos. El sistema debe manejar la interacción entre estudiantes, cursos y lecciones, asegurando la correcta gestión de progresos y evaluaciones.
+
+#### **Requisitos**
+
+1. **Módulo `course.py`:**
+   - Clase `Course` con atributos: `course_id`, `title`, `description`, `instructor`, `lessons`, `enrolled_students`.
+   - Métodos:
+     - `add_lesson(lesson)`: Añade una lección al curso.
+     - `remove_lesson(lesson_id)`: Elimina una lección del curso.
+     - `enroll_student(student_id)`: Inscribe a un estudiante en el curso.
+     - `unenroll_student(student_id)`: Desinscribe a un estudiante del curso.
+     - `summary()`: Retorna un resumen del curso.
+   - Validaciones:
+     - Las lecciones deben tener IDs únicos.
+     - Los estudiantes deben existir en el sistema antes de inscribirse.
+
+2. **Módulo `lesson.py`:**
+   - Clase `Lesson` con atributos: `lesson_id`, `title`, `content`, `duration`.
+   - Métodos:
+     - `update_content(new_content)`: Actualiza el contenido de la lección.
+     - `update_duration(new_duration)`: Actualiza la duración de la lección.
+     - `summary()`: Retorna un resumen de la lección.
+   - Validaciones:
+     - La duración debe ser un valor positivo.
+     - El contenido no debe estar vacío.
+
+3. **Módulo `user.py`:**
+   - Clase `User` con atributos: `user_id`, `name`, `email`, `password`, `role` ('student' o 'instructor'), `enrolled_courses`.
+   - Métodos:
+     - `register(name, email, password, role)`: Registra un nuevo usuario.
+     - `authenticate(email, password)`: Autentica al usuario.
+     - `update_info(name, email)`: Actualiza la información del usuario.
+     - `enroll_course(course_id)`: Inscribe al estudiante en un curso.
+     - `complete_course(course_id)`: Marca un curso como completado.
+   - Validaciones:
+     - El email debe ser único y válido.
+     - La contraseña debe cumplir con requisitos mínimos.
+     - El rol debe ser 'student' o 'instructor'.
+
+4. **Módulo `education_management.py`:**
+   - Clase `EducationManagement` que integra los módulos anteriores.
+   - Métodos:
+     - `manage_courses()`: Gestiona la creación, actualización y eliminación de cursos.
+     - `manage_lessons()`: Gestiona la creación, actualización y eliminación de lecciones.
+     - `manage_users()`: Gestiona el registro y actualización de usuarios.
+     - `generate_reports()`: Genera reportes de cursos, lecciones y progresos de estudiantes.
+   - Validaciones:
+     - Asegura la integridad de las relaciones entre usuarios, cursos y lecciones.
+
+5. **Pruebas con Pytest:**
+   - Desarrolla un conjunto exhaustivo de pruebas para cubrir todas las funcionalidades.
+   - Asegúrate de cubrir los siguientes tipos de cobertura:
+     - **Cobertura de sentencias**
+     - **Cobertura de ramas**
+     - **Cobertura de condiciones**
+     - **Cobertura de condición/Decisión Modificada (MC/DC)**
+     - **Cobertura de camino**
+   - Analiza la **complejidad ciclomática** de cada método.
+   - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
+
+#### **Recomendaciones**
+
+- Implementa autenticación segura para gestionar el acceso de usuarios.
+- Utiliza patrones de diseño como MVC para organizar el código de manera efectiva.
+- Diseña las pruebas para cubrir flujos de usuario completos, desde la creación de cursos hasta la inscripción y completado de cursos por parte de los estudiantes.
+- Considera el uso de fixtures para preparar el entorno de pruebas de manera eficiente.
+
+#### **Estructura sugerida**
+
+```
+education_management/
+├── education_management/
+│   ├── __init__.py
+│   ├── course.py
+│   ├── lesson.py
+│   ├── user.py
+│   └── education_management.py
+├── tests/
+│   ├── __init__.py
+│   └── test_education_management.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+A continuación, se ofrecen algunas recomendaciones adicionales para maximizar el aprendizaje:
+
+1. **Uso de herramientas de análisis:**
+   - **`pytest-cov`**: Para medir la cobertura de pruebas.
+   - **`radon`**: Para analizar la complejidad ciclomática del código.
+   - **`flake8` o `pylint`**: Para asegurar que el código sigue las buenas prácticas de estilo.
+
+2. **Integración continua (CI):**
+   - Configura un pipeline de CI (como GitHub Actions, GitLab CI, Travis CI) para ejecutar automáticamente las pruebas y medir la cobertura en cada cambio del código.
+   - Integra la carga de informes de cobertura a servicios como **Codecov** o **Coveralls** para un análisis más detallado.
+
+3. **Refactorización basada en métricas:**
+   - Utiliza los resultados de las métricas para identificar áreas del código que podrían beneficiarse de una refactorización.
+   - Reduce la complejidad ciclomática dividiendo métodos complejos en funciones más pequeñas y manejables.
+
+4. **Documentación y Comentarios:**
+   - Documenta cada clase y método para mejorar la legibilidad y mantenibilidad del código.
+   - Utiliza comentarios para explicar decisiones lógicas complejas que puedan afectar la cobertura de ramas y condiciones.
+
+5. **Pruebas parametrizadas y fixtures:**
+   - Emplea **fixtures** de `pytest` para preparar entornos de pruebas consistentes y reutilizables.
+   - Utiliza **pruebas parametrizadas** para cubrir múltiples escenarios con una única función de prueba, mejorando la eficiencia y cobertura.
+
+6. **Cobertura de funciones:**
+   - Asegúrate de que cada función y método tenga al menos una prueba asociada.
+   - Verifica que las pruebas no solo ejecutan las funciones, sino que también validan su comportamiento correcto y manejan casos de borde.
+
+7. **Análisis de resultados:**
+   - Revisa regularmente los informes de cobertura y complejidad para identificar tendencias y áreas de mejora.
+   - Establece objetivos de cobertura para diferentes partes del código, priorizando áreas críticas con alta complejidad ciclomática.
+
+8. **Pruebas de integración y sistema:**
+   - Además de las pruebas unitarias, implementa pruebas de integración para asegurar que los diferentes módulos interactúan correctamente.
+   - Realiza pruebas de sistema para validar el comportamiento completo de la aplicación desde la perspectiva del usuario final.
+
+
+
+
