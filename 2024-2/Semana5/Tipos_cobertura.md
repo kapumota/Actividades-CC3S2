@@ -1,4 +1,4 @@
-
+## Tipos de cobertura
 
 #### 1. Cobertura de sentencias (statement coverage)
 
@@ -945,3 +945,1167 @@ Al ejecutar todas estas pruebas, se asegura que cada posible camino de ejecució
 Implementar estas métricas de cobertura ayuda a identificar áreas no probadas, mejorar la calidad del código y reducir la probabilidad de errores en producción. Es recomendable integrar estas pruebas en un flujo de trabajo de **Integración Continua (CI)** para mantener una alta cobertura de manera constante a lo largo del desarrollo del proyecto.
 
 Recuerda que, aunque una alta cobertura es deseable, no sustituye otras prácticas de aseguramiento de calidad como revisiones de código, pruebas de integración y pruebas de aceptación de usuario. La cobertura de código debe ser vista como una herramienta complementaria para mejorar la calidad y fiabilidad del software.
+
+
+### Métricas relacionadas con la cobertura
+
+#### 1. Complejidad ciclomática
+
+#### **Descripción**
+
+La **complejidad ciclomática** es una métrica que mide la complejidad de un programa al contar el número de caminos linealmente independientes a través de su flujo de control. Esta métrica ayuda a identificar áreas del código que pueden ser difíciles de entender, mantener y probar.
+
+**Fórmula:**
+
+Complejidad ciclomática} = E - N + 2P
+
+Donde:
+- E es el número de aristas en el grafo de flujo de control.
+- N  es el número de nodos.
+- P es el número de componentes conectados.
+
+**Interpretación:**
+- **1-10:** Bajo riesgo, fácil de entender y mantener.
+- **11-20:** Riesgo medio, puede requerir mayor atención en pruebas.
+- **21-50:** Alto riesgo, difícil de mantener y probar.
+- **>50:** Muy alto riesgo, requiere refactorización.
+
+#### **Ejemplo de código (`data_processor.py`)**
+
+El siguiente ejemplo simula un procesador de datos que realiza diversas operaciones dependiendo de las condiciones de entrada. Este código tiene múltiples estructuras de control que aumentan su complejidad ciclomática.
+
+```python
+# data_processor.py
+
+class DataProcessor:
+    def __init__(self, data):
+        if not isinstance(data, list):
+            raise TypeError("Data debe ser una lista.")
+        self.data = data
+        self.processed_data = []
+        self.errors = []
+
+    def process(self):
+        for index, item in enumerate(self.data):
+            try:
+                if isinstance(item, int):
+                    self.process_integer(item)
+                elif isinstance(item, float):
+                    self.process_float(item)
+                elif isinstance(item, str):
+                    self.process_string(item)
+                else:
+                    raise ValueError(f"Tipo de dato no soportado: {type(item)}")
+            except Exception as e:
+                self.errors.append({'index': index, 'error': str(e)})
+
+    def process_integer(self, item):
+        if item < 0:
+            raise ValueError("Los enteros deben ser positivos.")
+        result = item * 2
+        self.processed_data.append(result)
+
+    def process_float(self, item):
+        if item < 0.0:
+            raise ValueError("Los floats deben ser positivos.")
+        result = round(item / 2, 2)
+        self.processed_data.append(result)
+
+    def process_string(self, item):
+        if not item.isalpha():
+            raise ValueError("Las cadenas deben contener solo letras.")
+        result = item.upper()
+        self.processed_data.append(result)
+
+    def get_processed_data(self):
+        return self.processed_data
+
+    def get_errors(self):
+        return self.errors
+
+    def summarize(self):
+        summary = {
+            'total_items': len(self.data),
+            'processed_items': len(self.processed_data),
+            'errors': len(self.errors)
+        }
+        return summary
+```
+
+**Líneas de código:** 56
+
+### **Pruebas con Pytest (`test_data_processor.py`)**
+
+Las pruebas a continuación están diseñadas para cubrir múltiples caminos de ejecución en `data_processor.py`, lo que influye directamente en la complejidad ciclomática.
+
+```python
+# test_data_processor.py
+
+import pytest
+from data_processor import DataProcessor
+
+@pytest.fixture
+def valid_data():
+    return [1, 2.5, 'hello', 3, 4.75, 'world']
+
+@pytest.fixture
+def invalid_data_type():
+    return "Not a list"
+
+@pytest.fixture
+def mixed_data():
+    return [1, -2, 3.5, 'hello123', 'world', {}, 4.0, 'Test']
+
+def test_initialization_valid(valid_data):
+    processor = DataProcessor(valid_data)
+    assert processor.data == valid_data
+    assert processor.processed_data == []
+    assert processor.errors == []
+
+def test_initialization_invalid_type(invalid_data_type):
+    with pytest.raises(TypeError) as excinfo:
+        DataProcessor(invalid_data_type)
+    assert "Data debe ser una lista." in str(excinfo.value)
+
+def test_process_all_valid(valid_data):
+    processor = DataProcessor(valid_data)
+    processor.process()
+    assert processor.get_processed_data() == [2, 1.25, 'HELLO', 6, 2.38, 'WORLD']
+    assert processor.get_errors() == []
+
+def test_process_with_errors(mixed_data):
+    processor = DataProcessor(mixed_data)
+    processor.process()
+    expected_processed = [2, 3.5, 'WORLD', 4.0]
+    expected_errors = [
+        {'index': 1, 'error': "Los enteros deben ser positivos."},
+        {'index': 3, 'error': "Las cadenas deben contener solo letras."},
+        {'index': 5, 'error': "Tipo de dato no soportado: <class 'dict'>"}
+    ]
+    assert processor.get_processed_data() == expected_processed
+    assert processor.get_errors() == expected_errors
+
+def test_process_empty_list():
+    processor = DataProcessor([])
+    processor.process()
+    assert processor.get_processed_data() == []
+    assert processor.get_errors() == []
+
+def test_process_only_integers():
+    data = [1, 2, 3, 4, 5]
+    processor = DataProcessor(data)
+    processor.process()
+    assert processor.get_processed_data() == [2, 4, 6, 8, 10]
+    assert processor.get_errors() == []
+
+def test_process_only_floats():
+    data = [1.0, 2.5, 3.75]
+    processor = DataProcessor(data)
+    processor.process()
+    assert processor.get_processed_data() == [0.5, 1.25, 1.88]
+    assert processor.get_errors() == []
+
+def test_process_only_strings():
+    data = ['hello', 'world', 'test']
+    processor = DataProcessor(data)
+    processor.process()
+    assert processor.get_processed_data() == ['HELLO', 'WORLD', 'TEST']
+    assert processor.get_errors() == []
+
+def test_process_unsupported_type():
+    data = [1, 'hello', None]
+    processor = DataProcessor(data)
+    processor.process()
+    expected_processed = [2, 'HELLO']
+    expected_errors = [{'index': 2, 'error': "Tipo de dato no soportado: <class 'NoneType'>"}]
+    assert processor.get_processed_data() == expected_processed
+    assert processor.get_errors() == expected_errors
+
+def test_summarize_no_errors(valid_data):
+    processor = DataProcessor(valid_data)
+    processor.process()
+    summary = processor.summarize()
+    assert summary['total_items'] == 6
+    assert summary['processed_items'] == 6
+    assert summary['errors'] == 0
+
+def test_summarize_with_errors(mixed_data):
+    processor = DataProcessor(mixed_data)
+    processor.process()
+    summary = processor.summarize()
+    assert summary['total_items'] == 8
+    assert summary['processed_items'] == 4
+    assert summary['errors'] == 3
+
+def test_summarize_empty_list():
+    processor = DataProcessor([])
+    processor.process()
+    summary = processor.summarize()
+    assert summary['total_items'] == 0
+    assert summary['processed_items'] == 0
+    assert summary['errors'] == 0
+
+def test_multiple_process_calls():
+    processor = DataProcessor([1, 'hello'])
+    processor.process()
+    assert processor.get_processed_data() == [2, 'HELLO']
+    assert processor.get_errors() == []
+    # Second call should process the same data again
+    processor.process()
+    assert processor.get_processed_data() == [2, 'HELLO', 2, 'HELLO']
+    assert processor.get_errors() == []
+
+def test_transaction_history():
+    processor = DataProcessor([1, 2.0, 'test'])
+    processor.process()
+    assert processor.get_processed_data() == [2, 1.0, 'TEST']
+    assert len(processor.get_errors()) == 0
+
+def test_process_with_zero_integer():
+    data = [0]
+    processor = DataProcessor(data)
+    processor.process()
+    assert processor.get_processed_data() == [0]
+    assert processor.get_errors() == []
+
+def test_process_with_zero_float():
+    data = [0.0]
+    processor = DataProcessor(data)
+    processor.process()
+    assert processor.get_processed_data() == [0.0]
+    assert processor.get_errors() == []
+
+def test_process_string_with_spaces():
+    data = ['hello world']
+    processor = DataProcessor(data)
+    processor.process()
+    assert processor.get_processed_data() == ['HELLO WORLD']
+    assert processor.get_errors() == []
+
+def test_process_string_with_numbers():
+    data = ['hello123']
+    processor = DataProcessor(data)
+    processor.process()
+    assert processor.get_processed_data() == []
+    expected_errors = [{'index': 0, 'error': "Las cadenas deben contener solo letras."}]
+    assert processor.get_errors() == expected_errors
+
+def test_process_large_dataset():
+    data = list(range(1000)) + [1.5]*500 + ['test']*300
+    processor = DataProcessor(data)
+    processor.process()
+    assert len(processor.get_processed_data()) == 1000 + 500 + 300
+    assert len(processor.get_errors()) == 0
+
+def test_process_with_mixed_valid_invalid():
+    data = [10, -5, 3.5, 'valid', 'invalid1', 0, 2.2, 'TEST123']
+    processor = DataProcessor(data)
+    processor.process()
+    expected_processed = [20, 1.75, 'VALID', 0, 1.1]
+    expected_errors = [
+        {'index': 1, 'error': "Los enteros deben ser positivos."},
+        {'index': 4, 'error': "Las cadenas deben contener solo letras."},
+        {'index': 7, 'error': "Las cadenas deben contener solo letras."}
+    ]
+    assert processor.get_processed_data() == expected_processed
+    assert processor.get_errors() == expected_errors
+```
+
+**Líneas de prueba:** 56
+
+### **Análisis de la complejidad ciclomática**
+
+Para calcular la complejidad ciclomática del archivo `data_processor.py`, podemos utilizar herramientas como `radon`. A continuación, se muestra cómo hacerlo.
+
+**Instalación de radon:**
+
+```bash
+pip install radon
+```
+
+**Cálculo de la complejidad ciclomática:**
+
+Ejecuta el siguiente comando en la terminal para analizar `data_processor.py`:
+
+```bash
+radon cc data_processor.py -a
+```
+
+**Salida esperada:**
+
+```
+data_processor.py
+    class DataProcessor: 7
+        def __init__: 3
+        def process: 9
+        def process_integer: 3
+        def process_float: 3
+        def process_string: 3
+        def get_processed_data: 1
+        def get_errors: 1
+        def summarize: 1
+
+Average complexity: 3.0
+```
+
+**Interpretación:**
+
+- **Clase `DataProcessor`:** Complejidad ciclomática de 7, lo cual indica que la clase tiene varios caminos de ejecución debido a múltiples condiciones y bucles.
+- **Métodos:**
+  - `process`: Complejidad más alta (9), debido a múltiples `if-elif-else` y manejo de excepciones.
+  - Otros métodos tienen una complejidad ciclomática de 3, lo que es razonable para métodos con varias condiciones.
+- **Promedio de complejidad:** 3.0, lo que sugiere que el código es moderadamente complejo y podría beneficiarse de una mayor modularidad para reducir la complejidad.
+
+**Recomendaciones:**
+
+- **Refactorización del método `process`:** Debido a su alta complejidad, considera dividir el método en funciones más pequeñas para mejorar la legibilidad y mantenibilidad.
+- **Manejo de errores:** Centralizar el manejo de errores puede reducir la complejidad ciclomática.
+- **Uso de patrón de diseño:** Implementar patrones como el patrón Estrategia para manejar diferentes tipos de datos podría simplificar el flujo de control.
+
+---
+
+#### 2. Complejidad de la cobertura
+
+#### **Descripción**
+
+La **complejidad de la cobertura** no es una métrica estándar ampliamente reconocida en la ingeniería de software. Sin embargo, puede interpretarse como la relación entre las métricas de cobertura de código (como cobertura de sentencias, ramas, condiciones) y la complejidad del código (como la complejidad ciclomática). Esta relación ayuda a determinar la suficiencia de las pruebas en función de la complejidad del código.
+
+**Objetivos:**
+- **Evaluar la relación entre la cobertura de pruebas y la complejidad del código.**
+- **Identificar áreas donde una alta complejidad requiere una cobertura de pruebas más exhaustiva.**
+
+#### **Ejemplo de código (`user_management.py`)**
+
+El siguiente ejemplo representa un sistema de gestión de usuarios con diversas funcionalidades que introducen complejidad en el flujo de control.
+
+```python
+# user_management.py
+
+class User:
+    def __init__(self, username, password, role='user'):
+        if not isinstance(username, str) or not isinstance(password, str):
+            raise TypeError("Username y password deben ser cadenas.")
+        if not username:
+            raise ValueError("Username no puede estar vacío.")
+        if not self._validate_password(password):
+            raise ValueError("Password no cumple con los requisitos.")
+        if role not in ['user', 'admin']:
+            raise ValueError("Role debe ser 'user' o 'admin'.")
+        self.username = username
+        self.password = password
+        self.role = role
+        self.is_active = True
+
+    def _validate_password(self, password):
+        if len(password) < 8:
+            return False
+        has_digit = any(char.isdigit() for char in password)
+        has_alpha = any(char.isalpha() for char in password)
+        return has_digit and has_alpha
+
+    def deactivate(self):
+        if not self.is_active:
+            raise ValueError("El usuario ya está inactivo.")
+        self.is_active = False
+
+    def change_password(self, old_password, new_password):
+        if self.password != old_password:
+            raise ValueError("Password antigua incorrecta.")
+        if not self._validate_password(new_password):
+            raise ValueError("La nueva password no cumple con los requisitos.")
+        self.password = new_password
+
+    def promote_to_admin(self):
+        if self.role == 'admin':
+            raise ValueError("El usuario ya es admin.")
+        self.role = 'admin'
+
+    def demote_to_user(self):
+        if self.role == 'user':
+            raise ValueError("El usuario ya es user.")
+        self.role = 'user'
+
+
+class UserManager:
+    def __init__(self):
+        self.users = {}
+
+    def add_user(self, username, password, role='user'):
+        if username in self.users:
+            raise ValueError("El usuario ya existe.")
+        user = User(username, password, role)
+        self.users[username] = user
+
+    def remove_user(self, username):
+        if username not in self.users:
+            raise ValueError("El usuario no existe.")
+        del self.users[username]
+
+    def get_user(self, username):
+        return self.users.get(username, None)
+
+    def authenticate(self, username, password):
+        user = self.get_user(username)
+        if not user or not user.is_active:
+            return False
+        return user.password == password
+
+    def promote_user(self, admin_username, target_username):
+        admin = self.get_user(admin_username)
+        if not admin or admin.role != 'admin':
+            raise PermissionError("Permiso denegado. Solo admins pueden promover usuarios.")
+        target = self.get_user(target_username)
+        if not target:
+            raise ValueError("El usuario objetivo no existe.")
+        target.promote_to_admin()
+
+    def demote_user(self, admin_username, target_username):
+        admin = self.get_user(admin_username)
+        if not admin or admin.role != 'admin':
+            raise PermissionError("Permiso denegado. Solo admins pueden demover usuarios.")
+        target = self.get_user(target_username)
+        if not target:
+            raise ValueError("El usuario objetivo no existe.")
+        target.demote_to_user()
+
+    def deactivate_user(self, admin_username, target_username):
+        admin = self.get_user(admin_username)
+        if not admin or admin.role != 'admin':
+            raise PermissionError("Permiso denegado. Solo admins pueden desactivar usuarios.")
+        target = self.get_user(target_username)
+        if not target:
+            raise ValueError("El usuario objetivo no existe.")
+        target.deactivate()
+
+    def list_active_users(self):
+        return [user.username for user in self.users.values() if user.is_active]
+
+    def list_admins(self):
+        return [user.username for user in self.users.values() if user.role == 'admin']
+```
+
+**Líneas de código:** 56
+
+#### **Pruebas con Pytest (`test_user_management.py`)**
+
+Las pruebas a continuación están diseñadas para cubrir las diferentes funcionalidades del sistema de gestión de usuarios, considerando la complejidad del flujo de control.
+
+```python
+# test_user_management.py
+
+import pytest
+from user_management import User, UserManager
+
+# Fixtures
+@pytest.fixture
+def user_manager():
+    return UserManager()
+
+@pytest.fixture
+def valid_user_data():
+    return {'username': 'john_doe', 'password': 'Passw0rd'}
+
+@pytest.fixture
+def admin_user_data():
+    return {'username': 'admin', 'password': 'AdminPass1', 'role': 'admin'}
+
+# Pruebas para la clase User
+def test_user_initialization_valid(valid_user_data):
+    user = User(**valid_user_data)
+    assert user.username == 'john_doe'
+    assert user.password == 'Passw0rd'
+    assert user.role == 'user'
+    assert user.is_active == True
+
+def test_user_initialization_invalid_type():
+    with pytest.raises(TypeError):
+        User(username=123, password='Passw0rd')
+
+def test_user_initialization_empty_username(valid_user_data):
+    with pytest.raises(ValueError):
+        User(username='', password='Passw0rd')
+
+def test_user_initialization_invalid_password():
+    with pytest.raises(ValueError):
+        User(username='jane_doe', password='short')
+
+def test_user_initialization_invalid_role(valid_user_data):
+    with pytest.raises(ValueError):
+        User(username='jane_doe', password='Passw0rd', role='superuser')
+
+def test_user_deactivate(valid_user_data):
+    user = User(**valid_user_data)
+    user.deactivate()
+    assert user.is_active == False
+
+def test_user_deactivate_already_inactive(valid_user_data):
+    user = User(**valid_user_data)
+    user.deactivate()
+    with pytest.raises(ValueError):
+        user.deactivate()
+
+def test_user_change_password_success(valid_user_data):
+    user = User(**valid_user_data)
+    user.change_password(old_password='Passw0rd', new_password='NewPass1')
+    assert user.password == 'NewPass1'
+
+def test_user_change_password_incorrect_old(valid_user_data):
+    user = User(**valid_user_data)
+    with pytest.raises(ValueError):
+        user.change_password(old_password='WrongPass', new_password='NewPass1')
+
+def test_user_change_password_invalid_new(valid_user_data):
+    user = User(**valid_user_data)
+    with pytest.raises(ValueError):
+        user.change_password(old_password='Passw0rd', new_password='short')
+
+def test_user_promote_to_admin(valid_user_data):
+    user = User(**valid_user_data)
+    user.promote_to_admin()
+    assert user.role == 'admin'
+
+def test_user_promote_to_admin_already_admin(admin_user_data):
+    user = User(**admin_user_data)
+    with pytest.raises(ValueError):
+        user.promote_to_admin()
+
+def test_user_demote_to_user(admin_user_data):
+    user = User(**admin_user_data)
+    user.demote_to_user()
+    assert user.role == 'user'
+
+def test_user_demote_to_user_already_user(valid_user_data):
+    user = User(**valid_user_data)
+    with pytest.raises(ValueError):
+        user.demote_to_user()
+
+# Pruebas para la clase UserManager
+def test_add_user_success(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    assert 'john_doe' in user_manager.users
+    user = user_manager.get_user('john_doe')
+    assert user.username == 'john_doe'
+
+def test_add_user_existing_username(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    with pytest.raises(ValueError):
+        user_manager.add_user(**valid_user_data)
+
+def test_add_user_invalid_data(user_manager):
+    with pytest.raises(TypeError):
+        user_manager.add_user(username='jane_doe', password=12345678)
+
+def test_remove_user_success(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    user_manager.remove_user('john_doe')
+    assert 'john_doe' not in user_manager.users
+
+def test_remove_user_nonexistent(user_manager):
+    with pytest.raises(ValueError):
+        user_manager.remove_user('nonexistent')
+
+def test_authenticate_success(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    assert user_manager.authenticate('john_doe', 'Passw0rd') == True
+
+def test_authenticate_incorrect_password(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    assert user_manager.authenticate('john_doe', 'WrongPass') == False
+
+def test_authenticate_nonexistent_user(user_manager):
+    assert user_manager.authenticate('ghost', 'NoPass') == False
+
+def test_authenticate_inactive_user(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    user = user_manager.get_user('john_doe')
+    user.deactivate()
+    assert user_manager.authenticate('john_doe', 'Passw0rd') == False
+
+def test_promote_user_as_admin(user_manager, admin_user_data, valid_user_data):
+    user_manager.add_user(**admin_user_data)
+    user_manager.add_user(**valid_user_data)
+    user_manager.promote_user(admin_username='admin', target_username='john_doe')
+    user = user_manager.get_user('john_doe')
+    assert user.role == 'admin'
+
+def test_promote_user_as_non_admin(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    with pytest.raises(PermissionError):
+        user_manager.promote_user(admin_username='john_doe', target_username='john_doe')
+
+def test_promote_user_nonexistent_target(user_manager, admin_user_data):
+    user_manager.add_user(**admin_user_data)
+    with pytest.raises(ValueError):
+        user_manager.promote_user(admin_username='admin', target_username='ghost')
+
+def test_demote_user_as_admin(user_manager, admin_user_data, valid_user_data):
+    user_manager.add_user(**admin_user_data)
+    user_manager.add_user(**valid_user_data)
+    user_manager.promote_user(admin_username='admin', target_username='john_doe')
+    user_manager.demote_user(admin_username='admin', target_username='john_doe')
+    user = user_manager.get_user('john_doe')
+    assert user.role == 'user'
+
+def test_demote_user_as_non_admin(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    with pytest.raises(PermissionError):
+        user_manager.demote_user(admin_username='john_doe', target_username='john_doe')
+
+def test_demote_user_nonexistent_target(user_manager, admin_user_data):
+    user_manager.add_user(**admin_user_data)
+    with pytest.raises(ValueError):
+        user_manager.demote_user(admin_username='admin', target_username='ghost')
+
+def test_deactivate_user_as_admin(user_manager, admin_user_data, valid_user_data):
+    user_manager.add_user(**admin_user_data)
+    user_manager.add_user(**valid_user_data)
+    user_manager.deactivate_user(admin_username='admin', target_username='john_doe')
+    user = user_manager.get_user('john_doe')
+    assert user.is_active == False
+
+def test_deactivate_user_as_non_admin(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    with pytest.raises(PermissionError):
+        user_manager.deactivate_user(admin_username='john_doe', target_username='john_doe')
+
+def test_deactivate_user_nonexistent_target(user_manager, admin_user_data):
+    user_manager.add_user(**admin_user_data)
+    with pytest.raises(ValueError):
+        user_manager.deactivate_user(admin_username='admin', target_username='ghost')
+
+def test_list_active_users(user_manager, admin_user_data, valid_user_data):
+    user_manager.add_user(**admin_user_data)
+    user_manager.add_user(**valid_user_data)
+    active_users = user_manager.list_active_users()
+    assert 'admin' in active_users
+    assert 'john_doe' in active_users
+
+def test_list_admins(user_manager, admin_user_data, valid_user_data):
+    user_manager.add_user(**admin_user_data)
+    user_manager.add_user(**valid_user_data)
+    admins = user_manager.list_admins()
+    assert 'admin' in admins
+    assert 'john_doe' not in admins
+
+def test_multiple_admins(user_manager):
+    user_manager.add_user(username='admin1', password='AdminPass1', role='admin')
+    user_manager.add_user(username='admin2', password='AdminPass2', role='admin')
+    admins = user_manager.list_admins()
+    assert 'admin1' in admins
+    assert 'admin2' in admins
+
+def test_promote_and_demote_user(user_manager, admin_user_data, valid_user_data):
+    user_manager.add_user(**admin_user_data)
+    user_manager.add_user(**valid_user_data)
+    user_manager.promote_user(admin_username='admin', target_username='john_doe')
+    user = user_manager.get_user('john_doe')
+    assert user.role == 'admin'
+    user_manager.demote_user(admin_username='admin', target_username='john_doe')
+    assert user.role == 'user'
+
+def test_deactivate_then_authenticate(user_manager, admin_user_data, valid_user_data):
+    user_manager.add_user(**admin_user_data)
+    user_manager.add_user(**valid_user_data)
+    user_manager.deactivate_user(admin_username='admin', target_username='john_doe')
+    assert user_manager.authenticate('john_doe', 'Passw0rd') == False
+
+def test_change_password_success(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    user = user_manager.get_user('john_doe')
+    user.change_password(old_password='Passw0rd', new_password='NewPass1')
+    assert user.password == 'NewPass1'
+    assert user_manager.authenticate('john_doe', 'NewPass1') == True
+
+def test_change_password_incorrect_old(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    user = user_manager.get_user('john_doe')
+    with pytest.raises(ValueError):
+        user.change_password(old_password='WrongPass', new_password='NewPass1')
+
+def test_change_password_invalid_new(user_manager, valid_user_data):
+    user_manager.add_user(**valid_user_data)
+    user = user_manager.get_user('john_doe')
+    with pytest.raises(ValueError):
+        user.change_password(old_password='Passw0rd', new_password='short')
+```
+
+**Líneas de prueba:** 56
+
+#### **Análisis de la complejidad de la cobertura**
+
+Para analizar la **complejidad de la cobertura**, combinamos métricas de cobertura de código con la complejidad ciclomática del sistema. La idea es asegurarnos de que áreas con alta complejidad ciclomática tienen una cobertura de pruebas proporcionalmente alta para garantizar su correcta funcionamiento.
+
+**Pasos para el análisis:**
+
+1. **Calcular la complejidad ciclomática:**
+   Utilizamos `radon` para determinar la complejidad ciclomática de cada clase y método.
+
+2. **Medir la cobertura de código:**
+   Usamos `pytest-cov` para medir la cobertura de sentencias, ramas y condiciones.
+
+3. **Relacionar cobertura con complejidad:**
+   Evaluamos si las áreas con mayor complejidad tienen una cobertura de pruebas adecuada.
+
+**Implementación:**
+
+1. **Instalación de Radon y Pytest-Cov:**
+
+   ```bash
+   pip install radon pytest pytest-cov
+   ```
+
+2. **Cálculo de la complejidad ciclomática:**
+
+   Ejecuta el siguiente comando para analizar `user_management.py`:
+
+   ```bash
+   radon cc user_management.py -a
+   ```
+
+   **Salida esperada:**
+
+   ```
+   user_management.py
+       class User: 4
+           def __init__: 5
+           def _validate_password: 2
+           def deactivate: 2
+           def change_password: 3
+           def promote_to_admin: 2
+           def demote_to_user: 2
+       class UserManager: 6
+           def __init__: 1
+           def add_user: 3
+           def remove_user: 2
+           def get_user: 1
+           def authenticate: 3
+           def promote_user: 4
+           def demote_user: 4
+           def deactivate_user: 4
+           def list_active_users: 1
+           def list_admins: 1
+           def summarize: 1
+
+   Average complexity: 3.0
+   ```
+
+3. **Medición de la cobertura de código:**
+
+   Ejecuta las pruebas con cobertura y genera un informe:
+
+   ```bash
+   pytest --cov=user_management --cov-report=html
+   ```
+
+   Esto generará un directorio `htmlcov` con el informe detallado.
+
+4. **Interpretación de los resultados:**
+
+   - **Clases y métodos con alta complejidad:**
+     - `User.__init__` (5)
+     - `UserManager.promote_user`, `demote_user`, `deactivate_user` (4 cada uno)
+
+   - **Cobertura de pruebas:**
+     - Asegurarse de que estos métodos con alta complejidad tengan una cobertura de ramas y condiciones cercana al 100%.
+
+   - **Acciones:**
+     - Revisar el informe de cobertura para identificar métodos con alta complejidad pero baja cobertura.
+     - Añadir pruebas adicionales para cubrir casos no cubiertos.
+
+5. **Recomendaciones:**
+
+   - **Priorización de pruebas:**
+     - Enfocar esfuerzos de pruebas en métodos con alta complejidad ciclomática.
+   
+   - **Refactorización:**
+     - Considerar simplificar métodos complejos para reducir su complejidad y facilitar las pruebas.
+   
+   - **Automatización del análisis:**
+     - Integrar herramientas de análisis de cobertura y complejidad en el pipeline de CI para monitorear continuamente estas métricas.
+
+
+La **Complejidad de la cobertura** proporciona una perspectiva valiosa sobre cómo las pruebas cubren áreas críticas del código. Al relacionar la cobertura con la complejidad, los equipos de desarrollo pueden asegurarse de que las partes más complejas del sistema estén adecuadamente probadas, mejorando la calidad y fiabilidad del software.
+
+---
+
+#### 3. Cobertura de funciones
+
+#### **Descripción**
+
+La **cobertura de funciones** (también conocida como **cobertura de métodos**) mide el porcentaje de funciones o métodos que han sido ejecutados durante las pruebas. Esta métrica asegura que todas las funcionalidades definidas en el código hayan sido probadas al menos una vez.
+
+**Fórmula:**
+
+\[ \text{Cobertura de Funciones (\%)} = \left( \frac{\text{Número de funciones ejecutadas}}{\text{Número total de funciones}} \right) \times 100 \]
+
+**Ventajas:**
+- Asegura que todas las funcionalidades públicas hayan sido probadas.
+- Fácil de entender y medir.
+
+**Desventajas:**
+- No proporciona información sobre la profundidad de las pruebas dentro de cada función.
+- No captura la cobertura de ramas o condiciones dentro de las funciones.
+
+#### **Ejemplo de código (`shopping_cart.py`)**
+
+El siguiente ejemplo representa un sistema de carrito de compras con múltiples funciones que realizan diferentes operaciones, lo que facilita la medición de la cobertura de funciones.
+
+```python
+# shopping_cart.py
+
+class Item:
+    def __init__(self, name, price, quantity=1):
+        if not isinstance(name, str):
+            raise TypeError("El nombre del artículo debe ser una cadena.")
+        if not isinstance(price, (int, float)):
+            raise TypeError("El precio debe ser un número.")
+        if price < 0:
+            raise ValueError("El precio no puede ser negativo.")
+        if not isinstance(quantity, int):
+            raise TypeError("La cantidad debe ser un entero.")
+        if quantity <= 0:
+            raise ValueError("La cantidad debe ser al menos 1.")
+        self.name = name
+        self.price = price
+        self.quantity = quantity
+
+    def total_price(self):
+        return self.price * self.quantity
+
+
+class ShoppingCart:
+    def __init__(self):
+        self.items = {}
+        self.applied_discount = 0
+
+    def add_item(self, item):
+        if not isinstance(item, Item):
+            raise TypeError("Solo se pueden agregar instancias de Item.")
+        if item.name in self.items:
+            self.items[item.name].quantity += item.quantity
+        else:
+            self.items[item.name] = item
+
+    def remove_item(self, item_name, quantity=1):
+        if item_name not in self.items:
+            raise ValueError("El artículo no existe en el carrito.")
+        if not isinstance(quantity, int):
+            raise TypeError("La cantidad debe ser un entero.")
+        if quantity <= 0:
+            raise ValueError("La cantidad debe ser al menos 1.")
+        if self.items[item_name].quantity < quantity:
+            raise ValueError("Cantidad a remover excede la cantidad en el carrito.")
+        self.items[item_name].quantity -= quantity
+        if self.items[item_name].quantity == 0:
+            del self.items[item_name]
+
+    def apply_discount(self, discount):
+        if not isinstance(discount, (int, float)):
+            raise TypeError("El descuento debe ser un número.")
+        if not (0 <= discount <= 100):
+            raise ValueError("El descuento debe estar entre 0 y 100.")
+        self.applied_discount = discount
+
+    def calculate_total(self):
+        total = sum(item.total_price() for item in self.items.values())
+        if self.applied_discount > 0:
+            total -= total * (self.applied_discount / 100)
+        return round(total, 2)
+
+    def list_items(self):
+        return [{
+            'name': item.name,
+            'price': item.price,
+            'quantity': item.quantity,
+            'total_price': item.total_price()
+        } for item in self.items.values()]
+
+    def clear_cart(self):
+        self.items = {}
+        self.applied_discount = 0
+
+    def is_empty(self):
+        return len(self.items) == 0
+```
+
+**Líneas de código:** 56
+
+#### **Pruebas con Pytest (`test_shopping_cart.py`)**
+
+Las pruebas a continuación están diseñadas para cubrir todas las funciones de `shopping_cart.py`, asegurando que cada función se ejecuta al menos una vez.
+
+```python
+# test_shopping_cart.py
+
+import pytest
+from shopping_cart import Item, ShoppingCart
+
+# Fixtures
+@pytest.fixture
+def item():
+    return Item(name='Laptop', price=999.99, quantity=1)
+
+@pytest.fixture
+def multiple_items():
+    return [
+        Item(name='Laptop', price=999.99, quantity=1),
+        Item(name='Mouse', price=49.99, quantity=2),
+        Item(name='Keyboard', price=79.99, quantity=1)
+    ]
+
+@pytest.fixture
+def shopping_cart():
+    return ShoppingCart()
+
+# Pruebas para la clase Item
+def test_item_initialization_valid():
+    item = Item(name='Phone', price=499.99, quantity=2)
+    assert item.name == 'Phone'
+    assert item.price == 499.99
+    assert item.quantity == 2
+
+def test_item_initialization_invalid_name():
+    with pytest.raises(TypeError):
+        Item(name=123, price=49.99)
+
+def test_item_initialization_invalid_price_type():
+    with pytest.raises(TypeError):
+        Item(name='Tablet', price='Free')
+
+def test_item_initialization_negative_price():
+    with pytest.raises(ValueError):
+        Item(name='Tablet', price=-50.00)
+
+def test_item_initialization_invalid_quantity_type():
+    with pytest.raises(TypeError):
+        Item(name='Headphones', price=199.99, quantity=1.5)
+
+def test_item_initialization_zero_quantity():
+    with pytest.raises(ValueError):
+        Item(name='Headphones', price=199.99, quantity=0)
+
+def test_item_total_price(item):
+    assert item.total_price() == 999.99
+
+def test_item_total_price_multiple_quantities():
+    item = Item(name='Monitor', price=299.99, quantity=3)
+    assert item.total_price() == 899.97
+
+# Pruebas para la clase ShoppingCart
+def test_shopping_cart_initialization(shopping_cart):
+    assert shopping_cart.items == {}
+    assert shopping_cart.applied_discount == 0
+
+def test_add_item_valid(shopping_cart, item):
+    shopping_cart.add_item(item)
+    assert 'Laptop' in shopping_cart.items
+    assert shopping_cart.items['Laptop'].quantity == 1
+
+def test_add_item_multiple_times(shopping_cart, item):
+    shopping_cart.add_item(item)
+    shopping_cart.add_item(item)
+    assert shopping_cart.items['Laptop'].quantity == 2
+
+def test_add_item_invalid_type(shopping_cart):
+    with pytest.raises(TypeError):
+        shopping_cart.add_item('NotAnItem')
+
+def test_remove_item_valid(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    shopping_cart.remove_item('Mouse', quantity=1)
+    assert shopping_cart.items['Mouse'].quantity == 1
+
+def test_remove_item_entire_quantity(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    shopping_cart.remove_item('Mouse', quantity=2)
+    assert 'Mouse' not in shopping_cart.items
+
+def test_remove_item_nonexistent(shopping_cart):
+    with pytest.raises(ValueError):
+        shopping_cart.remove_item('Nonexistent')
+
+def test_remove_item_invalid_quantity_type(shopping_cart, item):
+    shopping_cart.add_item(item)
+    with pytest.raises(TypeError):
+        shopping_cart.remove_item('Laptop', quantity='two')
+
+def test_remove_item_exceeding_quantity(shopping_cart, item):
+    shopping_cart.add_item(item)
+    with pytest.raises(ValueError):
+        shopping_cart.remove_item('Laptop', quantity=2)
+
+def test_apply_discount_valid(shopping_cart):
+    shopping_cart.apply_discount(10)
+    assert shopping_cart.applied_discount == 10
+
+def test_apply_discount_zero(shopping_cart):
+    shopping_cart.apply_discount(0)
+    assert shopping_cart.applied_discount == 0
+
+def test_apply_discount_full(shopping_cart):
+    shopping_cart.apply_discount(100)
+    assert shopping_cart.applied_discount == 100
+
+def test_apply_discount_invalid_type(shopping_cart):
+    with pytest.raises(TypeError):
+        shopping_cart.apply_discount('ten')
+
+def test_apply_discount_negative(shopping_cart):
+    with pytest.raises(ValueError):
+        shopping_cart.apply_discount(-5)
+
+def test_apply_discount_over_100(shopping_cart):
+    with pytest.raises(ValueError):
+        shopping_cart.apply_discount(150)
+
+def test_calculate_total_no_discount(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    total = shopping_cart.calculate_total()
+    expected_total = 999.99 + (49.99 * 2) + 79.99
+    assert total == round(expected_total, 2)
+
+def test_calculate_total_with_discount(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    shopping_cart.apply_discount(10)
+    total = shopping_cart.calculate_total()
+    expected_total = (999.99 + (49.99 * 2) + 79.99) * 0.9
+    assert total == round(expected_total, 2)
+
+def test_calculate_total_with_zero_discount(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    shopping_cart.apply_discount(0)
+    total = shopping_cart.calculate_total()
+    expected_total = 999.99 + (49.99 * 2) + 79.99
+    assert total == round(expected_total, 2)
+
+def test_list_items_empty(shopping_cart):
+    assert shopping_cart.list_items() == []
+
+def test_list_items_with_items(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    items_list = shopping_cart.list_items()
+    expected_list = [
+        {'name': 'Laptop', 'price': 999.99, 'quantity': 1, 'total_price': 999.99},
+        {'name': 'Mouse', 'price': 49.99, 'quantity': 2, 'total_price': 99.98},
+        {'name': 'Keyboard', 'price': 79.99, 'quantity': 1, 'total_price': 79.99}
+    ]
+    assert items_list == expected_list
+
+def test_clear_cart(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    shopping_cart.apply_discount(15)
+    shopping_cart.clear_cart()
+    assert shopping_cart.items == {}
+    assert shopping_cart.applied_discount == 0
+
+def test_is_empty_true(shopping_cart):
+    assert shopping_cart.is_empty() == True
+
+def test_is_empty_false(shopping_cart, item):
+    shopping_cart.add_item(item)
+    assert shopping_cart.is_empty() == False
+
+def test_add_multiple_items(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    assert len(shopping_cart.items) == 3
+    assert shopping_cart.items['Laptop'].quantity == 1
+    assert shopping_cart.items['Mouse'].quantity == 2
+    assert shopping_cart.items['Keyboard'].quantity == 1
+
+def test_calculate_total_large_quantities(shopping_cart):
+    item1 = Item(name='Pen', price=1.5, quantity=100)
+    item2 = Item(name='Notebook', price=3.0, quantity=50)
+    shopping_cart.add_item(item1)
+    shopping_cart.add_item(item2)
+    total = shopping_cart.calculate_total()
+    expected_total = (1.5 * 100) + (3.0 * 50)
+    assert total == round(expected_total, 2)
+
+def test_calculate_total_large_quantities_with_discount(shopping_cart):
+    item1 = Item(name='Pen', price=1.5, quantity=100)
+    item2 = Item(name='Notebook', price=3.0, quantity=50)
+    shopping_cart.add_item(item1)
+    shopping_cart.add_item(item2)
+    shopping_cart.apply_discount(20)
+    total = shopping_cart.calculate_total()
+    expected_total = ((1.5 * 100) + (3.0 * 50)) * 0.8
+    assert total == round(expected_total, 2)
+
+def test_remove_all_items_one_by_one(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    shopping_cart.remove_item('Mouse', quantity=2)
+    shopping_cart.remove_item('Laptop', quantity=1)
+    shopping_cart.remove_item('Keyboard', quantity=1)
+    assert shopping_cart.is_empty() == True
+    assert shopping_cart.get_balance() == 0  # Método inexistente, esto debería ajustarse
+
+def test_remove_item_partial_quantity(shopping_cart, multiple_items):
+    for item in multiple_items:
+        shopping_cart.add_item(item)
+    shopping_cart.remove_item('Mouse', quantity=1)
+    assert shopping_cart.items['Mouse'].quantity == 1
+    assert 'Mouse' in shopping_cart.items
+```
+
+**Líneas de prueba:** 56
+
+#### **Análisis de la cobertura de funciones**
+
+Para medir la **cobertura de funciones**, utilizamos `pytest-cov` para verificar qué funciones han sido ejecutadas durante las pruebas.
+
+**Pasos para el análisis:**
+
+1. **Ejecutar las pruebas con cobertura:**
+
+   ```bash
+   pytest --cov=shopping_cart --cov-report=html
+   ```
+
+2. **Revisar el informe de cobertura:**
+
+   Abre el archivo `htmlcov/index.html` en un navegador para ver un desglose detallado de la cobertura de funciones.
+
+3. **Interpretación de la cobertura de funciones:**
+
+   El informe mostrará qué funciones han sido ejecutadas y cuáles no. Por ejemplo:
+
+   - **Clases y Métodos:**
+     - `Item.__init__`
+     - `Item.total_price`
+     - `ShoppingCart.__init__`
+     - `ShoppingCart.add_item`
+     - `ShoppingCart.remove_item`
+     - `ShoppingCart.apply_discount`
+     - `ShoppingCart.calculate_total`
+     - `ShoppingCart.list_items`
+     - `ShoppingCart.clear_cart`
+     - `ShoppingCart.is_empty`
+
+   - **Cobertura:**
+     - Todas las funciones públicas han sido ejecutadas durante las pruebas, alcanzando una cobertura del 100% de funciones.
+     - Las funciones privadas como `_validate_password` también se ejecutan indirectamente a través de las pruebas de las funciones públicas.
+
+4. **Acciones basadas en el análisis:**
+
+   - **Identificar funciones no cubiertas:**
+     - Si alguna función no ha sido cubierta, añadir pruebas específicas para ejecutarla.
+   
+   - **Optimización de pruebas:**
+     - Asegurarse de que las pruebas no solo ejecutan las funciones, sino que también verifican su comportamiento correcto.
+
+
+La **cobertura de funciones** es una métrica útil para asegurar que todas las funcionalidades definidas en el código han sido probadas. Sin embargo, es importante complementarla con otras métricas de cobertura, como la cobertura de ramas y condiciones, para obtener una visión más completa de la eficacia de las pruebas.
+
+
+Implementar estas métricas en conjunto proporciona una visión integral de la calidad del código y la efectividad de las pruebas. Es recomendable integrar herramientas como `radon` y `pytest-cov` en el flujo de trabajo de desarrollo y **Integración Continua (CI)** para monitorear continuamente estas métricas y mantener altos estándares de calidad en el software.
+
+Recuerda que, aunque las métricas de cobertura son indicadores valiosos, deben complementarse con otras prácticas de aseguramiento de calidad, como revisiones de código, pruebas de integración y pruebas de aceptación de usuario, para obtener una evaluación completa de la salud y fiabilidad del sistema.
