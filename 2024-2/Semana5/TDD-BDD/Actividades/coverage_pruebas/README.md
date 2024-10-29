@@ -80,14 +80,34 @@ Vemos que este es el método `to_dict()`. ¿Puedes pensar en un caso de prueba q
 ```python
 def test_to_dict():
     """Prueba la conversión de una cuenta a diccionario"""
-    data = ACCOUNT_DATA[random_key]  # obtener una cuenta aleatoria
+    # Seleccionar un índice aleatorio válido
+    random_key = random.randint(0, len(ACCOUNT_DATA) - 1)
+    # Obtener los datos de la cuenta seleccionada
+    data = ACCOUNT_DATA[random_key]
+    
+    # Crear una instancia de Account con los datos seleccionados
     account = Account(**data)
+        
+    # Guardar la cuenta en la base de datos
+    account.create()
+        
+    # Convertir la cuenta a un diccionario
     result = account.to_dict()
-    assert account.name == result["name"]
-    assert account.email == result["email"]
-    assert account.phone_number == result["phone_number"]
-    assert account.disabled == result["disabled"]
-    assert account.date_joined == result["date_joined"]
+        
+    # Verificar que los campos del diccionario coinciden con los atributos de la instanci
+    assert account.name == result["name"], f"Nombre esperado: {account.name}, obtenido: {result['name']}"
+    assert account.email == result["email"], f"Email esperado: {account.email}, obtenido: {result['email']}"
+    assert account.phone_number == result["phone_number"], f"Número de teléfono esperado: {account.phone_number}, obtenido: {result['phone_number']}"
+    assert account.disabled == result["disabled"], f"Estado 'disabled' esperado: {account.disabled}, obtenido: {result['disabled']}"
+        
+    # Verificar que 'date_joined' está presente y es una cadena en formato ISO
+    assert "date_joined" in result, "'date_joined' no está presente en el diccionario resultante"
+        
+    # Verificar el formato de 'date_joined'
+    try:
+       datetime.fromisoformat(result["date_joined"])
+    except ValueError:
+       assert False, f"'date_joined' no está en formato ISO: {result['date_joined']}"
 ```
 
 #### Paso 3: Líneas faltantes 34-35
