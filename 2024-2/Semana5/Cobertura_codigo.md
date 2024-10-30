@@ -2,9 +2,11 @@
 
 ### Pruebas estructurales
 
-En esta lectura, aprendemos cómo reflexionar sistemáticamente sobre el código fuente, ver qué está ejercitando el conjunto de pruebas derivado con la ayuda de la especificación y qué queda por probar. El uso de la estructura del código fuente para guiar las pruebas también se conoce como **pruebas estructurales**. Comprender las técnicas de prueba estructural significa comprender los criterios de cobertura. 
+En esta actividad, aprendemos cómo reflexionar sistemáticamente sobre el código fuente, ver qué está ejercitando el conjunto de pruebas derivado con la ayuda de la especificación y qué queda por probar. El uso de la estructura del código fuente para guiar las pruebas también se conoce como **pruebas estructurales**. 
 
-El resto de esta lectura explora el uso de información de cobertura de código para ganar más confianza en que el programa funciona como se esperaba.
+Comprender las técnicas de prueba estructural significa comprender los criterios de cobertura. 
+
+El resto de esta actividad explora el uso de información de cobertura de código para ganar más confianza en que el programa funciona como se esperaba.
 
 ### Cobertura de código, de la manera correcta
 
