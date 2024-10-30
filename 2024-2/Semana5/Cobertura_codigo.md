@@ -123,7 +123,7 @@ A continuación, se describen los diferentes tipos de cobertura de código aplic
 
 - **Descripción:** Un desarrollador que tiene como objetivo lograr la cobertura de línea quiere al menos un caso de prueba que cubra la línea bajo prueba. No importa si esa línea contiene una declaración `if` compleja llena de condiciones. Si una prueba toca esa línea de alguna manera, el desarrollador puede contar la línea como cubierta.
   
-- **En el Contexto de CountWords:**
+- **En el contexto de CountWords:**
   
   En el método `count`, cada línea que contiene código ejecutable se considera para la cobertura de línea. Por ejemplo, la línea dentro del `if` que incrementa el contador `words` se considera cubierta si al menos una prueba ejecuta esa línea.
   
