@@ -406,3 +406,165 @@ if __name__ == "__main__":
 # Registrando usuario: María López
 # Enviando email a maria.lopez@example.com con asunto 'Bienvenido!'.
 
+## Ejemplos adicionales
+# Integración de servicios externos (código fuertemente acoplado)
+class RepositorioUsuario:
+    def __init__(self):
+        self.db = DatabaseConnection()
+
+    def obtener_usuario(self, id_usuario):
+        return self.db.query(f"SELECT * FROM usuarios WHERE id = {id_usuario}")
+# Código débilmente acoplado con DI
+
+class IDatabaseConnection(ABC):
+    @abstractmethod
+    def query(self, query):
+        pass
+
+class DatabaseConnection(IDatabaseConnection):
+    def query(self, query):
+        # Implementación real de la consulta a la base de datos
+        pass
+
+class RepositorioUsuario:
+    def __init__(self, db: IDatabaseConnection):
+        self.db = db
+
+    def obtener_usuario(self, id_usuario):
+        return self.db.query(f"SELECT * FROM usuarios WHERE id = {id_usuario}")
+
+#Implementación de un servicio de autenticación (código fuertemente scoplado)
+class ServicioAutenticacion:
+    def autenticar(self, usuario, contraseña):
+        db = DatabaseConnection()
+        usuario_db = db.query(f"SELECT * FROM usuarios WHERE nombre = '{usuario}'")
+        if usuario_db and usuario_db['contraseña'] == contraseña:
+            return True
+        return False
+
+class ControladorLogin:
+    def __init__(self):
+        self.servicio_autenticacion = ServicioAutenticacion()
+
+    def login(self, usuario, contraseña):
+        if self.servicio_autenticacion.autenticar(usuario, contraseña):
+            print("Autenticación exitosa")
+        else:
+            print("Autenticación fallida")
+
+#Código débilmente acoplado con DI
+class IRepositorioUsuario(ABC):
+    @abstractmethod
+    def obtener_usuario_por_nombre(self, nombre):
+        pass
+
+class RepositorioUsuario(IRepositorioUsuario):
+    def __init__(self, db: IDatabaseConnection):
+        self.db = db
+
+    def obtener_usuario_por_nombre(self, nombre):
+        return self.db.query(f"SELECT * FROM usuarios WHERE nombre = '{nombre}'")
+
+class ServicioAutenticacion:
+    def __init__(self, repositorio_usuario: IRepositorioUsuario):
+        self.repositorio_usuario = repositorio_usuario
+
+    def autenticar(self, usuario, contraseña):
+        usuario_db = self.repositorio_usuario.obtener_usuario_por_nombre(usuario)
+        if usuario_db and usuario_db['contraseña'] == contraseña:
+            return True
+        return False
+
+class ControladorLogin:
+    def __init__(self, servicio_autenticacion: ServicioAutenticacion):
+        self.servicio_autenticacion = servicio_autenticacion
+
+    def login(self, usuario, contraseña):
+        if self.servicio_autenticacion.autenticar(usuario, contraseña):
+            print("Autenticación exitosa")
+        else:
+            print("Autenticación fallida")
+
+# Uso de frameworks
+# inject
+import inject
+
+class ServicioEmail(IServicioNotificacion):
+    def enviar_notificacion(self, destinatario, asunto, mensaje):
+        print(f"Enviando email a {destinatario} con asunto '{asunto}'.")
+
+def config_injection(binder):
+    binder.bind(IServicioNotificacion, ServicioEmail())
+
+inject.configure(config_injection)
+
+class ControladorUsuario:
+    servicio_notificacion = inject.attr(IServicioNotificacion)
+
+    def registrar_usuario(self, usuario):
+        print(f"Registrando usuario: {usuario.nombre}")
+        self.servicio_notificacion.enviar_notificacion(usuario.email, "Bienvenido!", "Gracias por registrarte.")
+
+def main():
+    controlador = ControladorUsuario()
+    nuevo_usuario = Usuario("Luis García", "luis.garcia@example.com")
+    controlador.registrar_usuario(nuevo_usuario)
+
+if __name__ == "__main__":
+    main()
+
+#Registrando usuario: Luis García
+#Enviando email a luis.garcia@example.com con asunto 'Bienvenido!'.
+
+# Pruebas unitarias para ControladorUsuario
+import unittest
+from unittest.mock import Mock
+from my_module import ControladorUsuario, Usuario, IServicioNotificacion
+
+class TestControladorUsuario(unittest.TestCase):
+    def test_registrar_usuario_envia_notificacion(self):
+        # Crear un mock de IServicioNotificacion
+        mock_servicio_notificacion = Mock(spec=IServicioNotificacion)
+        
+        # Inyectar el mock en ControladorUsuario
+        controlador = ControladorUsuario(servicio_notificacion=mock_servicio_notificacion)
+        
+        # Crear un usuario de prueba
+        usuario = Usuario("Ana Martínez", "ana.martinez@example.com")
+        
+        # Registrar al usuario
+        controlador.registrar_usuario(usuario)
+        
+        # Verificar que enviar_notificacion fue llamado correctamente
+        mock_servicio_notificacion.enviar_notificacion.assert_called_once_with(
+            "ana.martinez@example.com",
+            "Bienvenido!",
+            "Gracias por registrarte."
+        )
+
+    def test_registrar_usuario_sin_notificacion(self):
+        # Crear un mock de IServicioNotificacion
+        mock_servicio_notificacion = Mock(spec=IServicioNotificacion)
+        
+        # Configurar el mock para que enviar_notificacion falle
+        mock_servicio_notificacion.enviar_notificacion.side_effect = Exception("Error al enviar notificación")
+        
+        # Inyectar el mock en ControladorUsuario
+        controlador = ControladorUsuario(servicio_notificacion=mock_servicio_notificacion)
+        
+        # Crear un usuario de prueba
+        usuario = Usuario("Carlos Ruiz", "carlos.ruiz@example.com")
+        
+        # Registrar al usuario y verificar que se maneja la excepción
+        with self.assertRaises(Exception) as context:
+            controlador.registrar_usuario(usuario)
+        
+        self.assertEqual(str(context.exception), "Error al enviar notificación")
+        mock_servicio_notificacion.enviar_notificacion.assert_called_once_with(
+            "carlos.ruiz@example.com",
+            "Bienvenido!",
+            "Gracias por registrarte."
+        )
+
+if __name__ == "__main__":
+    unittest.main()
