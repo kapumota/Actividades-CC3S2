@@ -726,7 +726,7 @@ Las pruebas aseguran que cada condición booleana dentro de las decisiones lógi
 
 #### **Descripción**
 
-La **Cobertura de camino** mide el porcentaje de caminos de ejecución únicos a través del código que han sido ejecutados por las pruebas. Un camino de ejecución es una secuencia única de sentencias y decisiones desde el inicio hasta el final de una función o módulo. Esta cobertura es extremadamente detallada y puede ser difícil de alcanzar en sistemas complejos debido a la explosión combinatoria de caminos posibles.
+La **cobertura de camino** mide el porcentaje de caminos de ejecución únicos a través del código que han sido ejecutados por las pruebas. Un camino de ejecución es una secuencia única de sentencias y decisiones desde el inicio hasta el final de una función o módulo. Esta cobertura es extremadamente detallada y puede ser difícil de alcanzar en sistemas complejos debido a la explosión combinatoria de caminos posibles.
 
 #### **Ejemplo de código (`bank_account.py`)**
 
