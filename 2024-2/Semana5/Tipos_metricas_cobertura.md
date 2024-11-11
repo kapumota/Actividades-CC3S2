@@ -722,11 +722,11 @@ Las pruebas aseguran que cada condición booleana dentro de las decisiones lógi
 
 ---
 
-#### 5. Cobertura de camino (Path Coverage)
+#### 5. Cobertura de ruta (Path Coverage)
 
 #### **Descripción**
 
-La **cobertura de camino** mide el porcentaje de caminos de ejecución únicos a través del código que han sido ejecutados por las pruebas. Un camino de ejecución es una secuencia única de sentencias y decisiones desde el inicio hasta el final de una función o módulo. Esta cobertura es extremadamente detallada y puede ser difícil de alcanzar en sistemas complejos debido a la explosión combinatoria de caminos posibles.
+La **cobertura de ruta** mide el porcentaje de rutas de ejecución únicos a través del código que han sido ejecutados por las pruebas. Una ruta de ejecución es una secuencia única de sentencias y decisiones desde el inicio hasta el final de una función o módulo. Esta cobertura es extremadamente detallada y puede ser difícil de alcanzar en sistemas complejos debido a la explosión combinatoria de rutas posibles.
 
 #### **Ejemplo de código (`bank_account.py`)**
 
@@ -913,34 +913,34 @@ def test_transfer_chain(account):
 
 #### **Explicación de la cobertura**
 
-La **cobertura de camino** se centra en asegurar que todas las posibles rutas de ejecución a través del código sean probadas. En `bank_account.py`, las funciones contienen múltiples decisiones que crean diferentes caminos de ejecución. Las pruebas están diseñadas para cubrir cada uno de estos caminos:
+La **cobertura de ruta** se centra en asegurar que todas las posibles rutas de ejecución a través del código sean probadas. En `bank_account.py`, las funciones contienen múltiples decisiones que crean diferentes rutas de ejecución. Las pruebas están diseñadas para cubrir cada uno de estas rutas:
 
 - **Constructor (`__init__`)**:
-  - Camino exitoso: saldo inicial >= 0.
-  - Camino de error: saldo inicial < 0.
+  - Ruta exitosa: saldo inicial >= 0.
+  - Ruta de error: saldo inicial < 0.
 
 - **Método `deposit`**:
-  - Camino exitoso: monto > 0.
-  - Camino de error: monto <= 0.
+  - Ruta exitosa: monto > 0.
+  - Ruta de error: monto <= 0.
 
 - **Método `withdraw`**:
-  - Camino exitoso: monto > 0 y saldo suficiente.
-  - Camino de error: monto <= 0.
-  - Camino de error: saldo insuficiente.
+  - Ruta exitosa: monto > 0 y saldo suficiente.
+  - Ruta de error: monto <= 0.
+  - Ruta de error: saldo insuficiente.
 
 - **Método `transfer`**:
-  - Camino exitoso: monto > 0, saldo suficiente, y cuenta objetivo válida.
-  - Camino de error: monto <= 0.
-  - Camino de error: saldo insuficiente.
-  - Camino de error: cuenta objetivo inválida.
+  - Ruta exitosa: monto > 0, saldo suficiente, y cuenta objetivo válida.
+  - Ruta de error: monto <= 0.
+  - Ruta de error: saldo insuficiente.
+  - Ruta de error: cuenta objetivo inválida.
 
 - **Métodos `get_balance` y `get_transaction_history`**:
-  - Caminos sencillos de acceso a datos.
+  - Rutas sencillas de acceso a datos.
 
 - **Pruebas adicionales**:
-  - Operaciones múltiples y transferencias encadenadas para cubrir caminos más complejos.
+  - Operaciones múltiples y transferencias encadenadas para cubrir rutas más complejas.
 
-Al ejecutar todas estas pruebas, se asegura que cada posible camino de ejecución en `bank_account.py` es ejecutado al menos una vez, alcanzando una cobertura de camino del 100%.
+Al ejecutar todas estas pruebas, se asegura que cada posible ruta de ejecución en `bank_account.py` es ejecutado al menos una vez, alcanzando una cobertura de ruta del 100%.
 
 Implementar estas métricas de cobertura ayuda a identificar áreas no probadas, mejorar la calidad del código y reducir la probabilidad de errores en producción. Es recomendable integrar estas pruebas en un flujo de trabajo de **Integración Continua (CI)** para mantener una alta cobertura de manera constante a lo largo del desarrollo del proyecto.
 
@@ -953,7 +953,7 @@ Recuerda que, aunque una alta cobertura es deseable, no sustituye otras práctic
 
 #### **Descripción**
 
-La **complejidad ciclomática** es una métrica que mide la complejidad de un programa al contar el número de caminos linealmente independientes a través de su flujo de control. Esta métrica ayuda a identificar áreas del código que pueden ser difíciles de entender, mantener y probar.
+La **complejidad ciclomática** es una métrica que mide la complejidad de un programa al contar el número de rutas linealmente independientes a través de su flujo de control. Esta métrica ayuda a identificar áreas del código que pueden ser difíciles de entender, mantener y probar.
 
 **Fórmula:**
 
@@ -1036,7 +1036,7 @@ class DataProcessor:
 
 #### **Pruebas con Pytest (`test_data_processor.py`)**
 
-Las pruebas a continuación están diseñadas para cubrir múltiples caminos de ejecución en `data_processor.py`, lo que influye directamente en la complejidad ciclomática.
+Las pruebas a continuación están diseñadas para cubrir múltiples rutas de ejecución en `data_processor.py`, lo que influye directamente en la complejidad ciclomática.
 
 ```python
 # test_data_processor.py
@@ -1250,7 +1250,7 @@ Average complexity: 3.0
 
 **Interpretación:**
 
-- **Clase `DataProcessor`:** Complejidad ciclomática de 7, lo cual indica que la clase tiene varios caminos de ejecución debido a múltiples condiciones y bucles.
+- **Clase `DataProcessor`:** Complejidad ciclomática de 7, lo cual indica que la clase tiene varias rutas de ejecución debido a múltiples condiciones y bucles.
 - **Métodos:**
   - `process`: Complejidad más alta (9), debido a múltiples `if-elif-else` y manejo de excepciones.
   - Otros métodos tienen una complejidad ciclomática de 3, lo que es razonable para métodos con varias condiciones.
@@ -2170,7 +2170,7 @@ Desarrolla un **sistema de gestión de inventario** para una tienda que permita 
      - **Cobertura de ramas**
      - **Cobertura de condiciones**
      - **Cobertura de condición/decisión modificada (MC/DC)**
-     - **Cobertura de camino**
+     - **Cobertura de ruta*
    - Analiza la **complejidad ciclomática** de cada método.
    - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
 
@@ -2258,7 +2258,7 @@ Crea una **aplicación de reserva de vuelos** que permita a los usuarios buscar 
      - **Cobertura de ramas**
      - **Cobertura de condiciones**
      - **Cobertura de condición/decisión modificada (MC/DC)**
-     - **Cobertura de camino**
+     - **Cobertura de ruta**
    - Analiza la **complejidad ciclomática** de cada método.
    - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
 
@@ -2358,7 +2358,7 @@ Desarrolla una **Plataforma de Comercio Electrónico** que permita a los usuario
      - **Cobertura de ramas**
      - **Cobertura de condiciones**
      - **Cobertura de condición/decisión modificada (MC/DC)**
-     - **Cobertura de camino**
+     - **Cobertura de ruta**
    - Analiza la **Complejidad ciclomática** de cada método.
    - Mide la **Cobertura de funciones** para asegurar que todas las funciones han sido probadas.
 
@@ -2455,7 +2455,7 @@ Crea un **sistema de gestión de hospital** que permita gestionar pacientes, mé
      - **Cobertura de ramas**
      - **Cobertura de condiciones**
      - **Cobertura de condición/decisión modificada (MC/DC)**
-     - **Cobertura de camino**
+     - **Cobertura de ruta**
    - Analiza la **complejidad ciclomática** de cada método.
    - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
 
@@ -2545,7 +2545,7 @@ Desarrolla un **sistema de gestión de educación en línea** que permita a los 
      - **Cobertura de ramas**
      - **Cobertura de condiciones**
      - **Cobertura de condición/Decisión Modificada (MC/DC)**
-     - **Cobertura de camino**
+     - **Cobertura de ruta**
    - Analiza la **complejidad ciclomática** de cada método.
    - Mide la **cobertura de funciones** para asegurar que todas las funciones han sido probadas.
 
