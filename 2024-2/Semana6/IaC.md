@@ -155,4 +155,3 @@ Una vez que hayas terminado, puedes destruir la VM para liberar recursos:
 $ vagrant destroy
 ```
 
-¡Felicidades por completar la actividad!
