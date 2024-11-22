@@ -383,6 +383,3 @@ Con esta actividad, has aprendido a:
 - **Aplicar principios de Infraestructura como Código (IaC)** para mejorar la seguridad y consistencia en la gestión de sistemas.
 - **Auditar comandos ejecutados con sudo** y entender la importancia del rastro de auditoría.
 
-
-
-¡Felicidades por completar la actividad! Has dado un paso importante en el dominio de la Infraestructura como Código y la gestión segura de sistemas Linux.
