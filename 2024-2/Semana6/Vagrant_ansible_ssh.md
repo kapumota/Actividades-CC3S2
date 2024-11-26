@@ -277,13 +277,10 @@ Si deseas liberar recursos:
 ```bash
 $ vagrant destroy
 ```
+**Nota:** Crea el archivo de Google Authenticator utilizando el siguiente comando:
 
+```bash
+google-authenticator -f -t -d -r 3 -R 30 -w 17 -e 10
+```
 
-Con esta actividad, has aprendido a:
-
-- **Configurar y automatizar la seguridad de acceso SSH** en una máquina virtual.
-- **Implementar autenticación de clave pública** para usuarios específicos.
-- **Habilitar y configurar autenticación de dos factores (2FA)** utilizando Google Authenticator y PAM.
-- **Gestionar servicios y reinicios** mediante controladores en Ansible.
-- **Aplicar principios de Infraestructura como Código (IaC)** para mejorar la seguridad y consistencia en la gestión de sistemas.
 
