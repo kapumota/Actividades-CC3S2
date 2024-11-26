@@ -1,0 +1,6 @@
+- name: Establecer el archivo de clave autorizada para el usuario 'bender'
+  authorized_key:
+    user: bender 
+    state: present
+    key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/dftd.pub') }}"
+

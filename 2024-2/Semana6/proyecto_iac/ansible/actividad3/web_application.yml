@@ -1,0 +1,31 @@
+---
+- name: Instalar python3-flask, gunicorn3 y nginx
+  apt:
+    name:
+      - python3-flask
+      - gunicorn
+      - nginx
+    update_cache: yes
+
+- name: Copiar aplicación de muestra de Flask
+  copy:
+    src: "../ansible/actividad3/{{ item }}"
+    dest: "/opt/ingenieria/{{ item }}"
+    group: desarrolladores
+    mode: '0750'
+  loop:
+    - greeting.py
+    - wsgi.py
+
+- name: Copiar archivo de unidad systemd para Greeting
+  copy:
+    src: "../ansible/actividad3/greeting.service"
+    dest: "/etc/systemd/system/greeting.service"
+
+- name: Iniciar y habilitar la aplicación Greeting
+  systemd:
+    name: greeting.service
+    daemon_reload: yes
+    state: started
+    enabled: yes
+

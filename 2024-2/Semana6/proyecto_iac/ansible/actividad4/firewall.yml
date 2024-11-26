@@ -1,0 +1,30 @@
+---
+
+- name: Establecer nivel de registro a bajo
+  ufw:
+    logging: 'low'
+
+- name: Permitir SSH en el puerto 22
+  ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+
+- name: Permitir acceso total al puerto 5000
+  ufw:
+    rule: allow
+    port: '5000'
+    proto: tcp
+
+- name: Limitar el abuso excesivo en el puerto 5000
+  ufw:
+    rule: limit
+    port: '5000'
+    proto: tcp
+
+- name: Bloquear todo el tráfico restante
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+

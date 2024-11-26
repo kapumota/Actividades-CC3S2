@@ -1,0 +1,15 @@
+[Unit]
+Description=La aplicación de saludo altamente complicada
+After=network.target
+
+[Service]
+User=www-data
+Group=desarrolladores
+WorkingDirectory=/opt/ingenieria
+ExecStart=/usr/bin/gunicorn3 --bind 0.0.0.0:5000 --access-logfile - --error-logfile - wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target
+
