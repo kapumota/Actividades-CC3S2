@@ -277,7 +277,7 @@ Si deseas liberar recursos:
 ```bash
 $ vagrant destroy
 ```
-**Nota:** Crea el archivo de Google Authenticator utilizando el siguiente comando.
+**Nota:** Crea el archivo de Google Authenticator utilizando el siguiente comando:
 
 ```bash
 google-authenticator -f -t -d -r 3 -R 30 -w 17 -e 10
