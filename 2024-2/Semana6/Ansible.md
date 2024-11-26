@@ -284,3 +284,9 @@ Si deseas liberar recursos:
 ```bash
 $ vagrant destroy
 ```
+**Nota**: Utiliza  este comando para generar el hash SHA512 que se usa en la tarea "crear usuario".
+
+```bash
+pass=`pwgen --secure --capitalize --numerals --symbols 12 1`
+echo $pass | mkpasswd --stdin --method=sha-512; echo $pass
+```
