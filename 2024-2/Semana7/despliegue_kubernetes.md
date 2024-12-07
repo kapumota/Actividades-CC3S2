@@ -488,3 +488,729 @@ Usar el clúster local para:
 - Simular fallos: escalar nodos, matar Pods, ver cómo Kubernetes se recupera.
 
 Esto construye la confianza en el sistema antes de su puesta en producción.
+
+---
+### Ejemplos
+
+
+**Ejemplo de arquitectura de Kubernetes y objetos básicos**
+
+1. Imagina que tienes un clúster Minikube iniciado con:
+   ```bash
+   minikube start
+   ```
+
+2. Verifica los nodos del clúster:
+   ```bash
+   kubectl get nodes
+   # Debe mostrar 1 nodo (minikube) en estado Ready
+   ```
+
+3. Crea un objeto Pod sencillo (un Pod es la unidad básica de ejecución):
+   ```yaml
+   # archivo: pod-simple.yaml
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: mi-pod
+   spec:
+     containers:
+       - name: my-container
+         image: nginx:1.19-alpine
+         ports:
+           - containerPort: 80
+   ```
+
+4. Aplica el Pod:
+   ```bash
+   kubectl apply -f pod-simple.yaml
+   ```
+
+5. Verifica que el Pod esté corriendo:
+   ```bash
+   kubectl get pods
+   ```
+
+Este ejemplo muestra el objeto Pod, uno de los objetos básicos de Kubernetes.
+
+
+**Creando un clúster**
+
+1. Con Minikube:
+   ```bash
+   minikube start
+   ```
+   Esto inicia un clúster local con un solo nodo.
+
+2. Verifica la versión de Kubernetes:
+   ```bash
+   kubectl version --short
+   ```
+
+3. Explora el contexto actual:
+   ```bash
+   kubectl config get-contexts
+   kubectl config current-context
+   ```
+
+**Subiendo tu contenedor**
+
+1. Crea una imagen local de tu aplicación (ejemplo con Node.js):
+   ```bash
+   docker build -t tu_usuario/mi-app:v1 .
+   ```
+   
+   Supongamos que tu Dockerfile es:
+   ```Dockerfile
+   FROM node:14-alpine
+   WORKDIR /app
+   COPY package*.json .
+   RUN npm install
+   COPY . .
+   CMD ["npm", "start"]
+   ```
+
+2. Sube la imagen a Docker Hub:
+   ```bash
+   docker login
+   docker push tu_usuario/mi-app:v1
+   ```
+
+Ahora la imagen está en un registro y Kubernetes puede acceder a ella.
+
+
+**Desplegando a Kubernetes**
+
+1. Crea un Deployment YAML (archivo: `deployment.yaml`):
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: mi-app
+   spec:
+     replicas: 3
+     selector:
+       matchLabels:
+         app: mi-app
+     template:
+       metadata:
+         labels:
+           app: mi-app
+       spec:
+         containers:
+           - name: mi-contenedor
+             image: tu_usuario/mi-app:v1
+             ports:
+               - containerPort: 3000
+   ```
+
+2. Aplica el Deployment:
+   ```bash
+   kubectl apply -f deployment.yaml
+   ```
+
+3. Observa los Pods creados por el Deployment:
+   ```bash
+   kubectl get deployments
+   kubectl get pods
+   ```
+
+**El PodSpec**
+
+- En el `deployment.yaml`, la sección `spec.template.spec` es el PodSpec. Ahí defines contenedores, imágenes, puertos, variables de entorno y volúmenes. Por ejemplo, para agregar variables de entorno:
+
+   ```yaml
+   spec:
+     containers:
+       - name: mi-contenedor
+         image: tu_usuario/mi-app:v1
+         env:
+           - name: NODE_ENV
+             value: "production"
+         ports:
+           - containerPort: 3000
+   ```
+
+- Aplica de nuevo:
+   ```bash
+   kubectl apply -f deployment.yaml
+   ```
+
+**Publicando tu servicio**
+
+1. Crea un Service para exponer la aplicación (archivo: `service.yaml`):
+   ```yaml
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: mi-app-service
+   spec:
+     type: NodePort
+     selector:
+       app: mi-app
+     ports:
+       - protocol: TCP
+         port: 80
+         targetPort: 3000
+   ```
+
+2. Aplica el Service:
+   ```bash
+   kubectl apply -f service.yaml
+   ```
+
+3. Verifica el Service y el NodePort asignado:
+   ```bash
+   kubectl get svc
+   # Probablemente verás un NodePort tipo 30000+ asignado
+   ```
+
+4. Accede a la aplicación:
+   ```bash
+   minikube service mi-app-service
+   # Esto abrirá el navegador apuntando al servicio.
+   ```
+
+
+**Interactuando con el despliegue**
+
+1. Ver los logs de un Pod:
+   ```bash
+   kubectl get pods
+   # Suponiendo un pod llamado mi-app-XXXX
+   kubectl logs mi-app-XXXX
+   ```
+
+2. Entrar al Pod:
+   ```bash
+   kubectl exec -it mi-app-XXXX -- sh
+   # Accederás a la shell dentro del contenedor
+   ```
+
+3. Escalar el Deployment a 5 réplicas:
+   ```bash
+   kubectl scale deployment mi-app --replicas=5
+   kubectl get pods
+   # Deberías ver 5 pods en ejecución.
+   ```
+
+**Actualizando tu aplicación**
+
+1. Cambia la imagen en `deployment.yaml` a `tu_usuario/mi-app:v2` (asumiendo que subiste una nueva versión):
+   ```yaml
+   spec:
+     template:
+       spec:
+         containers:
+           - name: mi-contenedor
+             image: tu_usuario/mi-app:v2
+   ```
+
+2. Aplica el cambio:
+   ```bash
+   kubectl apply -f deployment.yaml
+   ```
+
+3. Observa el rolling update:
+   ```bash
+   kubectl rollout status deployment/mi-app
+   ```
+
+Si algo va mal, puedes revertir a la versión anterior:
+   ```bash
+   kubectl rollout undo deployment/mi-app
+   ```
+
+
+**Limpiando**
+
+1. Para eliminar el Deployment y el Service:
+   ```bash
+   kubectl delete -f deployment.yaml
+   kubectl delete -f service.yaml
+   ```
+
+2. Verifica que los recursos se hayan eliminado:
+   ```bash
+   kubectl get deployments
+   kubectl get svc
+   ```
+   
+Todos los Pods y Servicios deben haber desaparecido.
+
+
+**Comandos imperativos**
+
+En lugar de crear YAML, puedes crear recursos imperativamente:
+
+1. Crear un Deployment imperativo:
+   ```bash
+   kubectl create deployment mi-app-imp --image=nginx:alpine
+   ```
+
+2. Exponerlo con un servicio imperativo:
+   ```bash
+   kubectl expose deployment mi-app-imp --type=NodePort --port=80
+   ```
+
+3. Escalar imperativamente:
+   ```bash
+   kubectl scale deployment mi-app-imp --replicas=4
+   ```
+
+Si bien esto funciona, el enfoque declarativo (YAML) es preferible para entornos de producción.
+
+**Entornos locales de Kubernetes**
+
+1. **Docker Desktop’s Kubernetes cluster**:  
+   - En Docker Desktop, habilita Kubernetes desde la configuración.  
+   - Espera a que el clúster se inicie.  
+   - Usa `kubectl get nodes` para ver el nodo único.  
+   - Aplica el mismo `deployment.yaml` y `service.yaml` usados antes, y prueba la aplicación de forma local.
+
+2. **Usando tu clúster local (Using your local Kubernetes cluster)**:  
+   - Con Minikube, ya creamos el clúster con `minikube start`.  
+   - Aplica el Deployment y Service del ejemplo anterior y accede con `minikube service mi-app-service`.  
+   - Para borrar todo: `kubectl delete -f deployment.yaml -f service.yaml`.  
+   - Para detener el clúster: `minikube stop`.
+   - Para eliminarlo: `minikube delete`.
+
+Estos entornos locales (Docker Desktop, Minikube) son ideales para aprender, probar y desarrollar antes de llevar la aplicación a un clúster en la nube.
+
+---
+### Actividad
+
+
+**Descripción de la actividad**
+
+La actividad consistirá en:
+
+1. **Entender la arquitectura básica de Kubernetes**: Tendrás un clúster local usando Minikube o Docker Desktop con Kubernetes activado.  
+2. **Crear un Pod a partir de un manifiesto YAML**.  
+3. **Crear un Deployment y un Service para el “timeserver”**.  
+4. **Actualizar la versión de la aplicación usando un nuevo Deployment**.  
+5. **Interactuar con el Deployment (escalar réplicas, ver logs, acceder vía port-forward, etc.)**.  
+6. **Limpiar los recursos creados**.  
+7. **Experimentar con comandos imperativos**.  
+8. **Probar un entorno local sin pull de imágenes externas (usando imagePullPolicy: Never)**.
+
+A lo largo de la actividad se usarán los manifiestos mostrados (pod.yml, deploy.yaml, service.yaml, svc.yaml) y se agregarán ejemplos extra.
+
+**Preparación del entorno**
+
+- Instala y configura Minikube o habilita el clúster de Kubernetes de Docker Desktop.
+- Verifica que `kubectl` funcione correctamente:
+  ```bash
+  kubectl version --short
+  kubectl get nodes
+  ```
+- Asegúrate de tener acceso a internet para bajar las imágenes, o tener las imágenes localmente.
+
+
+**1. Crear un Pod (el PodSpec)**
+
+Comenzaremos desplegando un Pod directo, sin Deployment, usando `pod.yml`:
+
+```yaml
+# pod.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: timeserver
+  labels:
+    pod: timeserver-pod
+spec:
+  containers:
+  - name: timeserver-container
+    image: docker.io/wdenniss/timeserver:1
+    ports:
+    - containerPort: 80
+```
+
+**Pasos**:  
+- Aplica este archivo:
+  ```bash
+  kubectl apply -f pod.yml
+  ```
+- Comprueba el estado del Pod:
+  ```bash
+  kubectl get pods
+  ```
+- Obtén información detallada:
+  ```bash
+  kubectl describe pod timeserver
+  ```
+
+**Actividad**:  
+- Verifica los logs del contenedor dentro del Pod:
+  ```bash
+  kubectl logs timeserver
+  ```
+
+Una vez probado, puedes eliminar el Pod (aunque no es obligatorio aún):
+```bash
+kubectl delete pod timeserver
+```
+
+**2. Desplegar una aplicación con deployment y service**
+
+Ahora utilizaremos un deployment y un service con las imágenes proporcionadas.
+
+**Manifiesto del deployment (deploy.yaml)**:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      pod: timeserver-pod
+  template:
+    metadata:
+      labels:
+        pod: timeserver-pod
+    spec:
+      containers:
+      - name: timeserver-container
+        image: docker.io/wdenniss/timeserver:1
+        ports:
+        - containerPort: 80
+```
+
+**Manifiesto del service (service.yaml)**:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: timeserver
+spec:
+  selector:
+    pod: timeserver-pod
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  type: LoadBalancer
+```
+
+**Pasos**:  
+- Aplica el Deployment:
+  ```bash
+  kubectl apply -f deploy.yaml
+  ```
+- Aplica el Service:
+  ```bash
+  kubectl apply -f service.yaml
+  ```
+
+- Verifica el estado:
+  ```bash
+  kubectl get deployments
+  kubectl get pods
+  kubectl get svc
+  ```
+
+- Si usas Minikube:
+  ```bash
+  minikube service timeserver
+  ```
+  Esto abrirá tu navegador apuntando al servicio, mostrando la hora devuelta por el timeserver.
+
+**Actividad**:  
+- Observa los logs de uno de los Pods:
+  ```bash
+  kubectl get pods
+  kubectl logs <nombre-del-pod>
+  ```
+
+- Haz un port-forward a un Pod para acceder localmente:
+  ```bash
+  kubectl port-forward deployment/timeserver 8080:80
+  # Ahora en tu navegador o curl: http://localhost:8080
+  ```
+
+**3. Actualizar la aplicación**
+
+Ahora cambiaremos la imagen a la versión `2` en el Deployment.
+
+**Nuevo deployment (update-deploy.yaml)**:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      pod: timeserver-pod
+  template:
+    metadata:
+      labels:
+        pod: timeserver-pod
+    spec:
+      containers:
+      - name: timeserver-container
+        image: docker.io/wdenniss/timeserver:2
+        ports:
+        - containerPort: 80
+```
+
+**Pasos**:  
+- Aplica la actualización:
+  ```bash
+  kubectl apply -f update-deploy.yaml
+  ```
+- Observa el rollout:
+  ```bash
+  kubectl rollout status deployment/timeserver
+  ```
+- Revisa las nuevas réplicas:
+  ```bash
+  kubectl get pods -o wide
+  ```
+- Accede nuevamente al servicio para ver si la versión 2 está funcionando.
+
+**Actividad**:  
+- Haz un rollback (opcional) a la versión anterior si lo deseas:
+  ```bash
+  kubectl rollout undo deployment/timeserver
+  ```
+
+**4. Interactuar con el deployment**
+
+- Escalar el número de réplicas a 5:
+  ```bash
+  kubectl scale deployment timeserver --replicas=5
+  kubectl get pods
+  ```
+- Ver los eventos del Deployment:
+  ```bash
+  kubectl describe deployment timeserver
+  ```
+- Listar los Labels para filtrar pods:
+  ```bash
+  kubectl get pods --show-labels
+  ```
+
+**Actividad**:  
+- Añade una variable de entorno al Pod en el deployment (modifica el YAML):
+  ```yaml
+  env:
+  - name: TZ
+    value: "UTC"
+  ```
+  Aplica el cambio y verifica el resultado.
+
+
+**5. Limpiar los recursos**
+
+- Elimina el deployment y el service:
+  ```bash
+  kubectl delete -f deploy.yaml
+  kubectl delete -f service.yaml
+  ```
+- Verifica que no queden pods ni services residuales:
+  ```bash
+  kubectl get pods
+  kubectl get svc
+  ```
+
+**Actividad**:  
+- Practica limpiar todos los recursos del namespace `default`:
+  ```bash
+  kubectl delete all --all
+  ```
+
+**6. Comandos imperativos**
+
+Sin usar YAML, crea un deployment imperativamente:
+```bash
+kubectl create deployment timeserver-imp --image=docker.io/wdenniss/timeserver:1
+```
+
+Exponlo con un service tipo NodePort:
+```bash
+kubectl expose deployment timeserver-imp --type=NodePort --port=80
+```
+
+Escala imperativamente:
+```bash
+kubectl scale deployment timeserver-imp --replicas=4
+```
+
+Observa el resultado:
+```bash
+kubectl get deployments
+kubectl get svc
+```
+
+Limpia:
+```bash
+kubectl delete deployment timeserver-imp
+kubectl delete svc timeserver-imp
+```
+
+
+**7. Entornos locales Kubernetes**
+
+Supongamos que deseas usar tu propia imagen local sin subirla a un registro. Para ello, puedes usar `imagePullPolicy: Never` y construir la imagen en tu máquina local:
+
+**Nuevo deployment para desarrollo local (local-deploy.yaml)**:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      pod: timeserver-pod
+  template:
+    metadata:
+      labels:
+        pod: timeserver-pod
+    spec:
+      containers:
+      - name: timeserver-container
+        image: timeserver:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+```
+
+**Nuevo service (svc.yaml)**:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: timeserver
+spec:
+  selector:
+    pod: timeserver-pod
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  type: LoadBalancer
+```
+
+**Pasos**:  
+- Primero construye la imagen localmente:
+  ```bash
+  docker build -t timeserver:latest .
+  ```
+  (Asume que tienes un Dockerfile que genere la imagen)
+
+- Con Minikube, para usar la imagen local:
+  ```bash
+  eval $(minikube docker-env)
+  docker images
+  ```
+  Comprueba que `timeserver:latest` está en la lista.
+
+- Aplica el Deployment y el Service:
+  ```bash
+  kubectl apply -f local-deploy.yaml
+  kubectl apply -f svc.yaml
+  ```
+
+- Verifica que los Pods arranquen sin intentar pullar la imagen:
+  ```bash
+  kubectl get pods
+  kubectl describe pod <un-pod>
+  ```
+
+- Accede al servicio localmente:
+  ```bash
+  minikube service timeserver
+  ```
+
+**Actividad**:  
+- Modifica el código fuente de la aplicación (fuera del clúster), reconstruye la imagen con la misma etiqueta `timeserver:latest` y aplica la estrategia rolling update con el mismo manifiesto. Observa cómo cambia el resultado sin necesidad de subir la imagen a un registro externo.
+
+
+**8. Explorando el clúster**
+
+- Inspecciona el cluster:
+  ```bash
+  kubectl cluster-info
+  ```
+- Lista todos los recursos en el namespace actual:
+  ```bash
+  kubectl get all
+  ```
+- Cambia a otro namespace o crea uno nuevo:
+  ```bash
+  kubectl create namespace dev
+  kubectl apply -f local-deploy.yaml -n dev
+  ```
+  
+- Limpia el namespace:
+  ```bash
+  kubectl delete namespace dev
+  ```
+
+**9. Añadiendo más complejidad (opcional)**
+
+- Crea un ConfigMap para inyectar variables de entorno en el Pod.
+- Añade liveness y readiness probes al PodSpec.
+- Implementa una estrategia de actualización específica en el Deployment, como RollingUpdate con parámetros `maxSurge` y `maxUnavailable`.
+
+Ejemplo rápido de liveness probe (puedes añadirlo al PodSpec en el Deployment):
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
+
+Aplica cambios y observa cómo Kubernetes gestiona la salud de los Pods.
+
+---
+### Ejercicios
+
+
+1. **Arquitectura de Kubernetes y objetos básicos**  
+   - Identifica los componentes del plano de control y los nodos de trabajo en tu clúster local. Describe las responsabilidades del API Server, etcd, Controller Manager y Scheduler.  
+   - Enumera los objetos nativos más importantes de Kubernetes (Pod, Deployment, Service, ConfigMap, Secret) e indica en qué casos utilizarías cada uno.
+
+2. **Creación y despliegue de una aplicación**  
+   - Crea un contenedor con tu propia aplicación (por ejemplo, una app Node.js o Python simple) y súbelo a un registro público.  
+   - Define un Deployment en YAML que ejecute tu aplicación y ajusta el número de réplicas.  
+   - Exponla mediante un Service de tipo NodePort y accede a la aplicación desde tu navegador.
+
+3. **Manipulación del PodSpec**  
+   - Modifica el PodSpec para añadir variables de entorno a tus contenedores.  
+   - Establece liveness y readiness probes para asegurarte de que el Pod se mantenga saludable.  
+   - Añade recursos (requests y limits) para CPU y memoria y comprueba cómo impacta en la programación del Pod en el clúster.
+
+4. **Interacción con el deployment**  
+   - Escala el Deployment a un número mayor de réplicas y verifica que se creen Pods adicionales.  
+   - Actualiza la versión de la imagen de la aplicación y observa el rolling update.  
+   - Realiza un rollback del Deployment a una versión anterior y comprueba que se restaure el estado previo.
+
+5. **Limpieza de recursos**  
+   - Elimina todos los recursos que creaste (Deployment, Service, Pods sueltos) y verifica que el clúster quede en un estado limpio.  
+   - Practica la eliminación de recursos por nombre, por archivo o por tipo de objeto.
+
+6. **Comandos imperativos**  
+   - Crea un Deployment usando un comando imperativo.  
+   - Expón el Deployment con un comando imperativo para crear un Service NodePort.  
+   - Escala el Deployment nuevamente mediante un comando imperativo y verifica los resultados.
+
+7. **Entornos locales de Kubernetes**  
+   - Si usas Minikube, inicia el clúster e instala una aplicación simple.  
+   - Utiliza el comando `minikube service` para acceder a la aplicación.  
+   - Ajusta el contexto de `kubectl` para trabajar con un clúster local (Minikube) y luego cambia a otro clúster o contexto (por ejemplo, Docker Desktop con Kubernetes).
+
+8. **Optimización y buenas prácticas**  
+   - Revisa el tamaño de tu imagen de la aplicación. ¿Cómo podrías reducirlo?  
+   - Añade un ConfigMap o Secret para separar datos de configuración del contenedor.  
+   - Integra un Health Check y un Horizontal Pod Autoscaler (HPA) (si es posible) para mantener la aplicación robusta y escalable automáticamente.
