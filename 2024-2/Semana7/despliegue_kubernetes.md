@@ -7,20 +7,20 @@ Kubernetes es una plataforma de orquestación de contenedores que facilita el de
 
 La arquitectura de Kubernetes se basa en un patrón maestro-trabajador (control plane-nodes workers). El plano de control incluye componentes como el API Server, etcd (el almacén de datos), el Scheduler y el Controller Manager. Por otro lado, los nodos de trabajo ejecutan el contenedor runtime y el kubelet, que comunica las necesidades del control plane con el entorno de ejecución real donde corren los Pods.
 
-1. **El clúster de Kubernetes (The Kubernetes cluster)**  
+1. **El clúster de Kubernetes**  
    Un clúster de Kubernetes se compone de uno o más nodos de control (control plane) y uno o más nodos de trabajo (workers). El control plane se encarga de recibir las especificaciones del usuario (por medio del API Server) y programar la carga de trabajo en los nodos disponibles, mientras mantiene un estado consistente.  
    
    Cada nodo de trabajo ejecuta los contenedores a través de Pods, las unidades más pequeñas y básicas de ejecución en Kubernetes. Estos nodos cuentan con un kubelet (un agente que se comunica con el API Server), un motor de contenedores (como containerd o cri-o) y el kube-proxy, que ayuda con la parte de red y encaminamiento interno.
    
    En su conjunto, el clúster ofrece capacidades de autorecuperación, escalado horizontal, actualización continua y una API declarativa que facilita la integración con pipelines de CI/CD.
 
-2. **Objetos de Kubernetes (Kubernetes objects)**  
+2. **Objetos de Kubernetes**  
    Los objetos de Kubernetes representan el estado deseado del sistema. Algunos de los objetos más comunes incluyen:
    - **Pods**: La unidad mínima de ejecución, encapsula uno o más contenedores.
    - **Services**: Proveen un endpoint estable y una política de acceso a Pods. Permiten el descubrimiento de servicios y el balanceo de carga.
    - **Deployments**: Controlan la ejecución y el ciclo de vida de Réplicas de Pods, facilitando actualizaciones declarativas y rollbacks.
    - **ReplicaSets**: Garantizan un número fijo de Pods corriendo. Aunque normalmente se crean y manejan a través de Deployments, pueden emplearse directamente.
-   - **ConfigMaps y Secrets**: Gestionan datos de configuración, variables de entorno, credenciales, sin incrustar estos datos directamente en la imagen del contenedor.
+   - **ConfigMaps y secrets**: Gestionan datos de configuración, variables de entorno, credenciales, sin incrustar estos datos directamente en la imagen del contenedor.
    - **Ingress**: Reglas de entrada HTTP para exponer servicios hacia el exterior, a menudo usando controladores especializados (Ingress Controllers).
 
 Estos objetos se describen usualmente mediante archivos YAML. Al aplicar estos archivos al clúster mediante el comando `kubectl apply`, Kubernetes se encarga de crear, actualizar o borrar objetos según sea necesario para lograr el estado deseado.
