@@ -195,7 +195,7 @@ En entornos críticos, puede que se requiera incluso un pipeline de aprobación 
 
 ---
 
-### Actividad
+### Actividades
 
 **Descripción de la actividad**
 
