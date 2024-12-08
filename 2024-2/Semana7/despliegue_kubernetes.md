@@ -1,6 +1,6 @@
 ### Introducción al despliegue en Kubernetes
 
-Kubernetes es una plataforma de orquestación de contenedores que facilita el despliegue, la administración y la escalabilidad de aplicaciones empaquetadas en contenedores. Su objetivo principal es abstraer la infraestructura subyacente y ofrecer una API coherente para gestionar las cargas de trabajo. Al trabajar con Kubernetes, el desarrollador o administrador se concentra en describir el estado deseado de la aplicación—cuántas réplicas deben estar corriendo, qué imagen se debe usar, cómo exponer el servicio y el sistema se encarga de asegurar que el estado actual del clúster coincida con el estado deseado.
+Kubernetes es una plataforma de orquestación de contenedores que facilita el despliegue, la administración y la escalabilidad de aplicaciones empaquetadas en contenedores. Su objetivo principal es abstraer la infraestructura subyacente y ofrecer una API coherente para gestionar las cargas de trabajo. Al trabajar con Kubernetes, el desarrollador o administrador se concentra en describir el estado deseado de la aplicación, cuántas réplicas deben estar corriendo, qué imagen se debe usar, cómo exponer el servicio y el sistema se encarga de asegurar que el estado actual del clúster coincida con el estado deseado.
 
 
 **Arquitectura de Kubernetes**
@@ -170,7 +170,7 @@ El despliegue de una aplicación en Kubernetes implica varios pasos: tener un cl
    kubectl delete -f service.yaml
    ```
    
-   Esto eliminará el Deployment, los Pods asociados y el Servicio. También se puede limpiar todo el namespace:
+   Esto eliminará el Deployment, los Pods asociados y Services. También se puede limpiar todo el namespace:
    ```bash
    kubectl delete namespace mi-namespace
    ```
@@ -764,7 +764,7 @@ Si bien esto funciona, el enfoque declarativo (YAML) es preferible para entornos
    - Usa `kubectl get nodes` para ver el nodo único.  
    - Aplica el mismo `deployment.yaml` y `service.yaml` usados antes, y prueba la aplicación de forma local.
 
-2. **Usando tu clúster local (Using your local Kubernetes cluster)**:  
+2. **Usando tu clúster local**:  
    - Con Minikube, ya creamos el clúster con `minikube start`.  
    - Aplica el Deployment y Service del ejemplo anterior y accede con `minikube service mi-app-service`.  
    - Para borrar todo: `kubectl delete -f deployment.yaml -f service.yaml`.  
