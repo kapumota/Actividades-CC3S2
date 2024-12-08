@@ -837,7 +837,7 @@ spec:
 Muchos estarán corriendo, pero posiblemente estén compitiendo por CPU. Observa con `kubectl top pods` (si tienes metrics-server instalado) el uso real y detecta si hay throttling.
 
 
-**Paso 4:Balancero entre réplicas de pods y concurrencia interna**
+**Paso 4:Balanceo entre réplicas de pods y concurrencia interna**
 
 Crea dos Deployments para comparar:
 
