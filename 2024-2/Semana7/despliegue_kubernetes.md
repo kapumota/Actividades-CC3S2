@@ -1,16 +1,16 @@
 ### Introducción al despliegue en Kubernetes
 
-Kubernetes es una plataforma de orquestación de contenedores que facilita el despliegue, la administración y la escalabilidad de aplicaciones empaquetadas en contenedores. Su objetivo principal es abstraer la infraestructura subyacente y ofrecer una API coherente para gestionar las cargas de trabajo. Al trabajar con Kubernetes, el desarrollador o administrador se concentra en describir el estado deseado de la aplicación—cuántas réplicas deben estar corriendo, qué imagen se debe usar, cómo exponer el servicio—y el sistema se encarga de asegurar que el estado actual del clúster coincida con el estado deseado.
+Kubernetes es una plataforma de orquestación de contenedores que facilita el despliegue, la administración y la escalabilidad de aplicaciones empaquetadas en contenedores. Su objetivo principal es abstraer la infraestructura subyacente y ofrecer una API coherente para gestionar las cargas de trabajo. Al trabajar con Kubernetes, el desarrollador o administrador se concentra en describir el estado deseado de la aplicación—cuántas réplicas deben estar corriendo, qué imagen se debe usar, cómo exponer el servicio y el sistema se encarga de asegurar que el estado actual del clúster coincida con el estado deseado.
 
 
 **Arquitectura de Kubernetes**
 
-La arquitectura de Kubernetes se basa en un patrón maestro-trabajador (control plane-nodes workers). El plano de control incluye componentes como el API Server, etcd (el almacén de datos), el Scheduler y el Controller Manager. Por otro lado, los nodos de trabajo ejecutan el contenedor runtime y el kubelet, que comunica las necesidades del control plane con el entorno de ejecución real donde corren los Pods.
+La arquitectura de Kubernetes se basa en un patrón maestro-trabajador (control plane-nodes workers). El plano de control incluye componentes como el API Server, etcd (el almacén de datos), el Scheduler y el Controller Manager. Por otro lado, los nodos de trabajo ejecutan el contenedor runtime y el kubelet, que comunica las necesidades del panel de control con el entorno de ejecución real donde corren los Pods.
 
 1. **El clúster de Kubernetes**  
-   Un clúster de Kubernetes se compone de uno o más nodos de control (control plane) y uno o más nodos de trabajo (workers). El control plane se encarga de recibir las especificaciones del usuario (por medio del API Server) y programar la carga de trabajo en los nodos disponibles, mientras mantiene un estado consistente.  
+   Un clúster de Kubernetes se compone de uno o más nodos de control  y uno o más nodos de trabajo (workers). El control plane se encarga de recibir las especificaciones del usuario (por medio del API Server) y programar la carga de trabajo en los nodos disponibles, mientras mantiene un estado consistente.  
    
-   Cada nodo de trabajo ejecuta los contenedores a través de Pods, las unidades más pequeñas y básicas de ejecución en Kubernetes. Estos nodos cuentan con un kubelet (un agente que se comunica con el API Server), un motor de contenedores (como containerd o cri-o) y el kube-proxy, que ayuda con la parte de red y encaminamiento interno.
+   Cada nodo de trabajo ejecuta los contenedores a través de Pods, las unidades más pequeñas y básicas de ejecución en Kubernetes. Estos nodos cuentan con un kubelet (un agente que se comunica con el API Server), un motor de contenedores (como containerd) y el kube-proxy, que ayuda con la parte de red y encaminamiento interno.
    
    En su conjunto, el clúster ofrece capacidades de autorecuperación, escalado horizontal, actualización continua y una API declarativa que facilita la integración con pipelines de CI/CD.
 
@@ -123,7 +123,7 @@ El despliegue de una aplicación en Kubernetes implica varios pasos: tener un cl
    - `NodePort`: Expondrá el servicio en todos los nodos, asignando un puerto entre 30000 y 32767.
    - `LoadBalancer`: Requiere soporte del proveedor de nube, crea un balanceador de carga externo.
 
-6. **Interactuando con el deployment**  
+6. **Interactuando con el Deployment**  
    Una vez desplegados los recursos, se usan comandos de `kubectl` para inspeccionar y administrar el estado:
    
    - `kubectl get pods`: Lista los pods.
@@ -234,7 +234,6 @@ Para aprender y desarrollar sin coste en la nube, es común usar entornos locale
    - Aprender Kubernetes sin riesgo ni complejidad.
 
 
-
 **Ciclo de vida de una aplicación en Kubernetes**
 
 A lo largo del uso de Kubernetes, un desarrollador podría seguir este flujo típico:
@@ -246,8 +245,6 @@ A lo largo del uso de Kubernetes, un desarrollador podría seguir este flujo tí
 5. **Escalado y actualizaciones**: Ajustar el número de réplicas (`kubectl scale` o editando el YAML) y cambiar la versión de la imagen para actualizar la aplicación.
 6. **Monitoreo y logging**: Inspeccionar logs con `kubectl logs`, verificar el estado con `kubectl describe`, y usar herramientas adicionales para monitoreo (Prometheus, Grafana).
 7. **Limpieza**: Eliminar recursos cuando ya no se necesitan, liberando recursos del clúster.
-
-
 
 Además de lo descrito, Kubernetes ofrece otros objetos y capacidades avanzadas:
 
@@ -304,7 +301,6 @@ Cuando se activa Kubernetes en Docker Desktop (disponible en Windows y macOS), s
 - Integración con imágenes locales: las imágenes construidas con Docker localmente pueden ser usadas directamente por el clúster sin necesidad de push a un registro externo, siempre y cuando se emplee el mismo Docker daemon. En algunos casos se debe utilizar `eval $(minikube docker-env)` (con Minikube) o configuración equivalente en Docker Desktop para que el clúster use el mismo demonio Docker.
 
 Esto simplifica mucho el desarrollo, ya que permite iterar rápidamente: construir la imagen, aplicarla al clúster local y probar.
-
 
 **Evolución y mantenimiento del clúster**
 
@@ -466,13 +462,13 @@ Esto simplifica la exploración, pero la configuración formal se mantiene en ar
 
 **Despliegue continuo y GitOps**
 
-Con GitOps, el repositorio Git se convierte en la fuente de verdad. Cada cambio en los manifiestos se sincroniza automáticamente con el clúster mediante herramientas como ArgoCD. Esto cierra el ciclo entre el código, la configuración y el estado del clúster, ofreciendo trazabilidad y reproducibilidad total del entorno.
+Con GitOps, el repositorio Git se convierte en la fuente de verdad. Esto significa que el estado deseado de tu infraestructura y aplicaciones está completamente definido y versionado en un repositorio Git. Esto implica que todo lo relacionado con la configuración, despliegue, y operación de tus sistemas está representado como código (Infrastructure as Code, o IaC). 
+Cada cambio en los manifiestos se sincroniza automáticamente con el clúster mediante herramientas como ArgoCD. Esto cierra el ciclo entre el código, la configuración y el estado del clúster, ofreciendo trazabilidad y reproducibilidad total del entorno.
 
 
 **Integraciones con otros ecosistemas**
 
 Kubernetes no actúa solo: se integra con herramientas de logging (ELK stack, Loki), monitoreo (Prometheus, Grafana), tracing (Jaeger), y servicio mesh (Istio). Esto crea un ecosistema sólido para administrar arquitecturas complejas de microservicios. El uso de Ingress Controllers, como Nginx o Traefik, facilita el ruteo HTTP/HTTPS. PersistentVolumes y Claims permiten almacenamiento persistente sobre distintas backend de almacenamiento (NFS, EBS, etc.).
-
 
 **Control de versiones de las configuraciones**
 
