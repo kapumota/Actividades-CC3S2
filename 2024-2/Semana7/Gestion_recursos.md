@@ -81,7 +81,7 @@ A diferencia de la memoria, el CPU es un recurso compresible: un contenedor pued
 
 **Reducir costos sobreaprovisionando CPU**
 
-Una estrategia común para reducir costos es el overcommit de CPU. Dado que es poco probable que todos los Pods requieran su request máximo simultáneamente, se puede asignar una suma total de requests mayor a la CPU física disponible en el nodo. Esto se basa en el supuesto de que no todos los contenedores alcanzan su pico al mismo tiempo. Esta sobreasignación permite mayor densidad de Pods por nodo, reduciendo el número total de nodos necesarios y por ende los costos.
+Una estrategia común para reducir costos es el overcommit (sobreaprovisamiento) de CPU. Dado que es poco probable que todos los Pods requieran su request máximo simultáneamente, se puede asignar una suma total de requests mayor a la CPU física disponible en el nodo. Esto se basa en el supuesto de que no todos los contenedores alcanzan su pico al mismo tiempo. Esta sobreasignación permite mayor densidad de Pods por nodo, reduciendo el número total de nodos necesarios y por ende los costos.
 
 Sin embargo, el overcommitting debe hacerse con prudencia. Un exceso puede provocar saturación de CPU si muchos Pods demandan su uso máximo a la vez. Esto puede resultar en throttling (ralentización) severo y, por ende, menor rendimiento global. Encontrar el punto justo de overcommitting es un arte que requiere experiencia, monitoreo y ajustes constantes. Algunas prácticas incluyen:
 
