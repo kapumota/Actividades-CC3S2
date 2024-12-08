@@ -4,7 +4,7 @@ La observabilidad es un conjunto de prácticas, herramientas y principios que pe
 
 La pila (stack) de Grafana se ha convertido en un estándar de facto para la observabilidad. Con Grafana como plataforma visual, complementada por soluciones nativas o integradas para métricas (Prometheus, Mimir), logs (Loki), trazas (Tempo) y alertas, se obtiene un ecosistema completo para monitorear aplicaciones e infraestructuras. Grafana ofrece paneles personalizables, integraciones con múltiples fuentes de datos, y la capacidad de correlacionar señales de distintos orígenes en una sola interfaz.
 
-Este enfoque unificado facilita la detección de anomalías, el análisis de performance, y el mantenimiento continuo de la salud del sistema. La meta es reducir el MTTR (Mean Time To Recovery), mejorar la confiabilidad y proveer una experiencia consistente a los usuarios finales.
+Este enfoque unificado facilita la detección de anomalías, el análisis de rendimiento, y el mantenimiento continuo de la salud del sistema. La meta es reducir el MTTR (Mean Time To Recovery), mejorar la confiabilidad y proveer una experiencia consistente a los usuarios finales.
 
 
 **Instrumentación de aplicaciones e infraestructura**
@@ -79,7 +79,7 @@ La observabilidad no solo es observación pasiva; es necesario actuar ante anoma
 Con las alertas definidas, se necesita un sistema para enrutar y notificar. Alertmanager, parte del ecosistema Prometheus, se encarga de recibir alertas, agruparlas, silenciarlas, o reenviarlas a canales como Slack, email, PagerDuty u otros. Grafana también puede gestionar alertas en versiones recientes, unificando la administración.
 
 
-**Revisando alertas golden signal en Prometheus**
+**Revisando alertas Golden Signal en Prometheus**
 
 Algunas alertas típicas basadas en señales doradas:
 
@@ -787,7 +787,7 @@ module "prometheus" {
 
 `terraform apply` crea y actualiza el stack. Guarda dashboards, datasources, alert rules en código. Así, cada cambio se versiona en Git, se revisa en PR y se despliega consistentemente.
 
-**Paso 15: Arquitectando la plataforma de Observabilidad**
+**Paso 15: Arquitectando la plataforma de observabilidad**
 
 Considera:
 
@@ -803,7 +803,7 @@ Documenta el diseño, mantén catálogos de paneles estándar, define on-call ro
 ### Ejercicios
 
 
-**Ejercicio 1: Integración de Instrumentación en el pipeline CI/CD**
+**Ejercicio 1: Integración de instrumentación en el pipeline CI/CD**
 
 - Objetivo: Incluir la instrumentación de la aplicación en el pipeline de desarrollo.  
 - Tareas:
@@ -882,7 +882,7 @@ Esto garantiza que en cada entrega el monitoreo de infraestructura esté funcion
 Esto integra incident management testing al ciclo de desarrollo.
 
 
-**Ejercicio 8: Automatización con infraestructura como Código (IaC) en el pipeline**
+**Ejercicio 8: Automatización con infraestructura como código (IaC) en el pipeline**
 
 - Objetivo: Cada cambio en paneles de Grafana, datasources, reglas de retención en Loki, configuración de Tempo, etc., se aplica automáticamente desde el repositorio.
 - Tareas:
