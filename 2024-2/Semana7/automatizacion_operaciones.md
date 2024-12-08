@@ -7,7 +7,7 @@ Una de las herramientas fundamentales para la automatización de operaciones en 
 
 **Automatización de la disponibilidad con comprobaciones de salud**
 
-La habilidad de detectar y responder automáticamente a fallos incrementa enormemente la disponibilidad de las aplicaciones. Las health checks, implementadas con liveness y readiness probes, informan al orquestador sobre el estado interno de los contenedores. Estas sondas realizan comprobaciones periódicas en el contenedor para decidir si está funcionando adecuadamente o no.
+La habilidad de detectar y responder automáticamente a fallos incrementa enormemente la disponibilidad de las aplicaciones. Las comprobaciones de salud (health checks), implementadas con liveness y readiness probes, informan al orquestador sobre el estado interno de los contenedores. Estas sondas realizan comprobaciones periódicas en el contenedor para decidir si está funcionando adecuadamente o no.
 
 1. **Liveness y readiness probes**  
    Kubernetes define principalmente dos tipos de sondas de salud:  
@@ -66,7 +66,7 @@ La habilidad de detectar y responder automáticamente a fallos incrementa enorme
 
 Una vez que la aplicación está en producción y con health checks configurados, llega el momento de manejar actualizaciones sin interrumpir el servicio. Las estrategias de despliegue (rollout strategies) permiten lanzar nuevas versiones sin downtime, minimizando riesgos y ofreciendo opciones de rollback inmediato si algo sale mal.
 
-1. **Estrategia de actualización continua o Rolling update**  
+1. **Estrategia de actualización continua o rolling update**  
    La estrategia de rolling update reemplaza gradualmente las réplicas de la versión antigua por réplicas de la nueva versión. Por ejemplo, si hay 3 réplicas corriendo la versión 1 de la aplicación, el orquestador primero lanza una réplica de la versión 2, espera a que pase la readiness probe, y luego elimina una réplica de la versión 1. Este proceso se repite hasta que todas las réplicas ejecutan la versión 2.  
    
    Ventajas del rolling update:
@@ -77,7 +77,7 @@ Una vez que la aplicación está en producción y con health checks configurados
    - Durante el rollout, pueden coexistir dos versiones de la aplicación. Esto puede ser problemático si hay incompatibilidades entre ellas o con clientes.  
    - La complejidad aumenta si se requieren cambios en la base de datos o integraciones externas.
 
-2. **Estrategia de recreación**  
+2. **Estrategia de Recreate**  
    La estrategia de recreate es más simple: detiene todas las réplicas de la versión antigua y luego lanza todas las réplicas de la nueva versión. Esto garantiza que en ningún momento hay dos versiones simultáneamente, evitando incompatibilidades. Sin embargo, introduce un downtime, ya que entre la eliminación de la versión antigua y la puesta en marcha de la nueva, no hay contenedores sirviendo tráfico.
 
    Ventajas:
@@ -88,7 +88,7 @@ Una vez que la aplicación está en producción y con health checks configurados
    - El downtime puede ser inaceptable en entornos críticos.  
    - Menos beneficios de disponibilidad continua, propia de Kubernetes.
 
-3. **Estrategia azul/verde**  
+3. **Estrategia Blue/Green**  
    En la estrategia blue/green se mantienen dos entornos idénticos: uno es el entorno "blue" (la versión actual en producción) y el otro "green" (la nueva versión a desplegar). Primero se prepara el entorno green con la nueva versión, se valida que funcione correctamente (por ejemplo, usando readiness probes para garantizar que la nueva versión está lista), y luego se redirige el tráfico al entorno green. El entorno blue permanece inactivo como un fallback.  
    
    Ventajas:
@@ -590,7 +590,7 @@ Con las pruebas realizadas:
 - Escribe en un archivo de texto (sin necesidad de código) qué estrategia usarías en tu entorno real y justifica por qué.  
 - Considera el impacto de readiness y liveness probes en cada estrategia.
 
-**8. Más Código: Añadiendo un Health Check TCP**
+**8. Más código: Añadiendo un Health Check TCP**
 
 Prueba un tipo diferente de probe (TCP) cambiando la liveness o readiness probe a una verificación TCP:
 
