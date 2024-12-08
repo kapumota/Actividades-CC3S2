@@ -224,3 +224,741 @@ La gestión de recursos se integra con otros componentes y objetos de Kubernetes
 - **StatefulSets**: Aplicaciones con estado necesitan mayor previsión en requests y limits, ya que mover Pods stateful es más complejo y costoso.
 
 
+---
+### Ejemplos
+
+**Ejemplo 1: Pod con especificación de recursos (QoS Guaranteed)**
+
+Este Pod especifica los mismos valores de request y limit para CPU y memoria en su contenedor, otorgándole una clase de QoS “Guaranteed”.
+
+```yaml
+# pod-guaranteed.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-guaranteed
+spec:
+  containers:
+  - name: app
+    image: nginx:stable
+    resources:
+      requests:
+        cpu: "500m"       # 0.5 CPU
+        memory: "256Mi"   # 256 Mi de memoria
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+```
+
+**Comando para crear el Pod**:
+```bash
+kubectl apply -f pod-guaranteed.yaml
+```
+
+Este Pod tendrá QoS Guaranteed, asegurando que obtendrá exactamente esos recursos y será el último en ser desalojado en caso de presión de recursos.
+
+
+**Ejemplo 2: Pod sin requests ni limits (QoS BestEffort)**
+
+```yaml
+# pod-besteffort.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-besteffort
+spec:
+  containers:
+  - name: minimal
+    image: busybox
+    command: ["sh", "-c", "sleep 3600"]
+```
+
+**Creación**:
+```bash
+kubectl apply -f pod-besteffort.yaml
+```
+
+Este Pod no solicita ni limita recursos, por lo que será QoS BestEffort, el primero en ser desalojado si el nodo tiene problemas de recursos.
+
+**Ejemplo 3: Pod con QoS Burstable**
+
+```yaml
+# pod-burstable.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-burstable
+spec:
+  containers:
+  - name: worker
+    image: ubuntu
+    command: ["sh", "-c", "while true; do echo working; sleep 5; done"]
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "128Mi"
+      limits:
+        cpu: "1"
+        memory: "256Mi"
+```
+
+**Creación**:
+```bash
+kubectl apply -f pod-burstable.yaml
+```
+
+Este Pod tiene requests menores a sus límites, lo que permite mayor flexibilidad. Su QoS es Burstable. Podrá usar hasta 1 CPU y 256Mi en picos, pero garantiza al menos 200m y 128Mi.
+
+**Ejemplo 4: Evictions, Priority y Preemption**
+
+Primero, crea una PriorityClass:
+
+```yaml
+# priorityclass.yaml
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000
+globalDefault: false
+description: "Prioridad alta para Pods críticos."
+```
+
+**Creación**:
+```bash
+kubectl apply -f priorityclass.yaml
+```
+
+Ahora un Pod con alta prioridad:
+
+```yaml
+# pod-highpriority.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-highpriority
+spec:
+  priorityClassName: high-priority
+  containers:
+  - name: critical
+    image: busybox
+    command: ["sh", "-c", "sleep 3600"]
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+```
+
+**Creación**:
+```bash
+kubectl apply -f pod-highpriority.yaml
+```
+
+Si el clúster no puede programar este Pod por falta de recursos, puede desalojar Pods con menor prioridad para hacer espacio.
+
+**Ejemplo 5: Ajuste de recursos (Memory requests y limits)**
+
+```yaml
+# pod-memory.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-memory-limits
+spec:
+  containers:
+  - name: mem-app
+    image: nginx:stable
+    resources:
+      requests:
+        memory: "128Mi"
+      limits:
+        memory: "256Mi"
+```
+
+Este Pod garantiza 128Mi (request) pero no tomará más de 256Mi (limit). Si supera los 256Mi, será terminado (OOMKilled).
+
+**Ejemplo 6: Ajuste de recursos (CPU requests y limits)**
+
+```yaml
+# pod-cpu.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-cpu-limits
+spec:
+  containers:
+  - name: cpu-app
+    image: busybox
+    command: ["sh", "-c", "yes > /dev/null"]
+    resources:
+      requests:
+        cpu: "250m"
+      limits:
+        cpu: "500m"
+```
+
+Este Pod tiene 250m como mínimo garantizado, y puede usar hasta 500m. Si intenta usar más, sufrirá throttling pero no será matado.
+
+
+**Ejemplo 7: Sobrecarga del CPU**
+
+Supongamos un nodo con 2 CPU. Podemos ejecutar varios Pods con requests de CPU que sumen más de 2 CPU si asumimos que no todos demandarán el 100% al mismo tiempo.
+
+Por ejemplo, crear 10 Pods con request de 200m cada uno:
+```yaml
+# pod-overcommit.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-overcommit
+spec:
+  containers:
+  - name: multi
+    image: busybox
+    command: ["sh", "-c", "sleep 3600"]
+    resources:
+      requests:
+        cpu: "200m"
+```
+
+Crear 10 réplicas (PodTemplates) usando un Deployment:
+
+```yaml
+# deploy-overcommit.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overcommit-deploy
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: overcommit
+  template:
+    metadata:
+      labels:
+        app: overcommit
+    spec:
+      containers:
+      - name: multi
+        image: busybox
+        command: ["sh", "-c", "sleep 3600"]
+        resources:
+          requests:
+            cpu: "200m"
+```
+
+**Creación**:
+```bash
+kubectl apply -f deploy-overcommit.yaml
+```
+
+Total de requests: 10 x 200m = 2000m = 2 CPU. Si el nodo tiene 2 CPU, estamos en el límite. Si lanzamos 11 Pods (2200m), sobrepasamos la capacidad nominal, confiando en que no todos usen CPU al máximo.
+
+**Balanceando replicas de pods y concurrencia interna**
+
+Supongamos que tienes una aplicación web escalable y deseas equilibrar entre más réplicas pequeñas o menos réplicas con más CPU cada una.
+
+Primero, mayor número de réplicas con recursos moderados:
+
+```yaml
+# deploy-many-replicas.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-many
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: web
+        image: myorg/webapp:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+```
+
+Aquí tenemos 10 réplicas, cada una con poca CPU, asumiendo que la carga se distribuye.
+
+En cambio, menor número de réplicas con mayor CPU por Pod:
+
+```yaml
+# deploy-fewer-replicas.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-fewer
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webapp2
+  template:
+    metadata:
+      labels:
+        app: webapp2
+    spec:
+      containers:
+      - name: web
+        image: myorg/webapp:latest
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+```
+
+Menos Pods, pero cada uno puede manejar más carga internamente. Se debe elegir la estrategia según la tolerancia a fallos y patrones de tráfico.
+
+
+**Ejemplo 9: Ajuste dinámico con HPA**
+
+Si se crea un Horizontal Pod Autoscaler (HPA) sobre `webapp-many`, y se establece un objetivo de uso de CPU al 80% de los requests, el HPA ajustará el número de réplicas según la carga. Si los Pods usan más de 80% de 100m (por ejemplo 90m/100m=90%), el HPA incrementará réplicas. Si los Pods raramente superan 50m/100m=50%, el HPA mantendrá las réplicas o incluso las reducirá (si está configurado para ello).
+
+
+**Ejemplo 10: Sidecars y sumas de recursos**
+
+Si se tiene un Pod con múltiples contenedores, se deben sumar requests de CPU y memoria de todos los contenedores para determinar el total. Por ejemplo:
+
+```yaml
+# pod-sidecar.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-sidecar
+spec:
+  containers:
+  - name: main-app
+    image: myorg/main-app:latest
+    resources:
+      requests:
+        cpu: "300m"
+        memory: "256Mi"
+      limits:
+        cpu: "600m"
+        memory: "512Mi"
+  - name: sidecar-logger
+    image: myorg/logger:latest
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+```
+
+Este Pod en total requiere 400m CPU (300m+100m) y 384Mi de memoria (256Mi+128Mi) como mínimo. El scheduler usará estos valores sumados para ubicar el Pod.
+
+---
+### Actividades
+
+**Objetivo de la actividad**
+
+1. **Configurar recursos en Pods y Deployments**: Aprender a establecer requests y limits de CPU y memoria.
+2. **Calidad de Servicio (QoS)**: Observar cómo cambia la QoS de Pods al variar requests y limits.
+3. **Prioridad y Preempción**: Comprobar cómo Pods de alta prioridad pueden desalojar Pods de menor prioridad en un clúster saturado.
+4. **Sobredimensionamiento (Overcommit)**: Experimentar con el sobreaprovisionamiento de CPU.
+5. **Balancing Pod replicas vs. internal Pod concurrency**: Entender las diferencias entre muchas réplicas pequeñas y pocas réplicas más potentes.
+
+
+**Prerrequisitos**
+
+- Contar con un clúster Kubernetes (Minikube o Docker Desktop con Kubernetes habilitado).
+- Tener `kubectl` configurado para operar sobre el clúster.
+- Permisos para crear y eliminar recursos (Namespaces, Deployments, PriorityClasses).
+
+
+**Estructura de la actividad**
+
+La actividad se desarrollará sobre un namespace dedicado para evitar conflictos con otros recursos. Recomendamos:
+
+```bash
+kubectl create namespace recursos
+kubectl config set-context --current --namespace=recursos
+```
+
+
+**Paso 1: Especificación de recursos (Requests y Limits)**
+
+**Código de ejemplo con requests solamente (QoS: Burstable)**
+
+```yaml
+# deploy-requests.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      pod: timeserver-pod
+  template:
+    metadata:
+      labels:
+        pod: timeserver-pod
+    spec:
+      containers:
+      - name: timeserver-container
+        image: docker.io/wdenniss/timeserver:3
+        resources:
+          requests:
+            cpu: 200m
+            memory: 250Mi
+```
+
+**Actividad**:  
+- Aplica este Deployment:
+  ```bash
+  kubectl apply -f deploy-requests.yaml
+  ```
+- Observa los Pods:
+  ```bash
+  kubectl get pods -o wide
+  ```
+- Comprueba la QoS:
+  ```bash
+  kubectl get pod timeserver-<ID> -o yaml | grep qosClass
+  ```
+  Deberías ver `qosClass: Burstable` ya que tiene requests, pero no limits iguales a ellos.
+
+
+**Código con requests y limits (QoS: Burstable o Guaranteed según coincidencia)**
+
+```yaml
+# deploy_requests_limits.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeserver-limits
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      pod: timeserver-pod-limits
+  template:
+    metadata:
+      labels:
+        pod: timeserver-pod-limits
+    spec:
+      containers:
+      - name: timeserver-container
+        image: docker.io/wdenniss/timeserver:3
+        resources:
+          requests:
+            cpu: 200m
+            memory: 250Mi
+          limits:
+            cpu: 300m
+            memory: 400Mi
+```
+
+**Actividad**:  
+- Aplica este Deployment:
+  ```bash
+  kubectl apply -f deploy_requests_limits.yaml
+  ```
+- Comprueba QoS (likely Burstable, pues requests != limits).
+
+
+**Paso 2: Prioridad y preempción**
+
+Crearemos PriorityClasses y Deployments con diferentes prioridades. Primero, la PriorityClass sin preempción:
+
+```yaml
+# priorityclass.yaml
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000000
+preemptionPolicy: Never
+globalDefault: false
+description: "Critical services."
+```
+
+**Actividad**:
+```bash
+kubectl apply -f priorityclass.yaml
+```
+
+Ahora la PriorityClass con preempción:
+
+```yaml
+# priorityclass-preemption.yaml
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority-preemption
+value: 1000000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "Critical services."
+```
+
+**Actividad**:
+```bash
+kubectl apply -f priorityclass-preemption.yaml
+```
+
+**Deployment sin prioridad (muchos Pods)**
+
+```yaml
+# deploy_no_priority.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeserver-np
+spec:
+  replicas: 15
+  selector:
+    matchLabels:
+      pod: timeserver-pod-np
+  template:
+    metadata:
+      labels:
+        pod: timeserver-pod-np
+    spec:
+      containers:
+      - name: timeserver-container
+        image: docker.io/wdenniss/timeserver:1
+        resources:
+          requests:
+            cpu: 200m
+            memory: 250Mi
+```
+
+**Actividad**:
+- Llena el clúster con Pods sin prioridad:
+  ```bash
+  kubectl apply -f deploy_no_priority.yaml
+  ```
+- Verifica Pods pendientes:
+  ```bash
+  kubectl get pods
+  ```
+
+Si tienes pocos nodos, muchos Pods quedarán pendientes o saturarán el nodo.
+
+**Deployment de alta prioridad con preempción**
+
+```yaml
+# deploy_high_priority.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeserver-hpp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      pod: timeserver-pod-hpp
+  template:
+    metadata:
+      labels:
+        pod: timeserver-pod-hpp
+    spec:
+      priorityClassName: high-priority-preemption
+      containers:
+      - name: timeserver-container
+        image: docker.io/wdenniss/timeserver:1
+        resources:
+          requests:
+            cpu: 200m
+            memory: 250Mi
+```
+
+**Actividad**:
+- Aplica la implementación de alta prioridad:
+  ```bash
+  kubectl apply -f deploy_high_priority.yaml
+  ```
+- Comprueba el estado:
+  ```bash
+  kubectl get pods
+  ```
+Deberías ver que algunos Pods sin prioridad son desalojados para dar cabida a los de alta prioridad.
+
+
+**Paso 3: Sobrecarga de CPU**
+
+Prueba a sobreaprovisionar CPU. Por ejemplo, si tu nodo tiene 2 CPU, intenta correr 20 réplicas con requests de 200m cada una (4 CPUs en total).
+
+Modifica el `deploy_no_priority.yaml` a:
+
+```yaml
+# deploy_overcommit.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overcommit-deploy
+spec:
+  replicas: 20
+  selector:
+    matchLabels:
+      pod: overcommit-pod
+  template:
+    metadata:
+      labels:
+        pod: overcommit-pod
+    spec:
+      containers:
+      - name: timeserver-container
+        image: docker.io/wdenniss/timeserver:1
+        resources:
+          requests:
+            cpu: 200m
+            memory: 100Mi
+```
+
+**Actividad**:
+- Aplica este Deployment:
+  ```bash
+  kubectl apply -f deploy_overcommit.yaml
+  ```
+- Verifica el estado de Pods:
+  ```bash
+  kubectl get pods
+  ```
+Muchos estarán corriendo, pero posiblemente estén compitiendo por CPU. Observa con `kubectl top pods` (si tienes metrics-server instalado) el uso real y detecta si hay throttling.
+
+
+**Paso 4:Balancero entre réplicas de pods y concurrencia interna**
+
+Crea dos Deployments para comparar:
+
+**Muchas réplicas pequeñas**:
+
+```yaml
+# deploy_many_small.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-many
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: web
+        image: myorg/webapp:latest
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+```
+
+**Pocas réplicas grandes**:
+
+```yaml
+# deploy_few_large.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-few
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webapp2
+  template:
+    metadata:
+      labels:
+        app: webapp2
+    spec:
+      containers:
+      - name: web
+        image: myorg/webapp:latest
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1
+            memory: 1Gi
+```
+
+**Actividad**:
+- Aplica ambos:
+  ```bash
+  kubectl apply -f deploy_many_small.yaml
+  kubectl apply -f deploy_few_large.yaml
+  ```
+- Observa cómo se distribuyen los Pods. ¿Se quedan pendientes algunos por falta de CPU/memoria?  
+- Compara la respuesta de la aplicación si tienes un balanceador enfrente (Service + Ingress) y pruebas de carga. ¿Cuál es más resiliente si falla un Pod? ¿Cuál es más simple de administrar?
+
+
+**Paso 5: Ajustar Requests y Limits basado en métricas**
+
+Opcionalmente, si tienes Prometheus y Grafana, o al menos el metrics-server, recolecta métricas:
+
+- `kubectl top pods` para ver consumo real.
+- Ajusta los requests si ves que el uso medio es muy inferior al request (puedes reducir requests para acomodar más Pods).  
+- Ajusta los limits si el Pod nunca alcanza el 50% del limit (posiblemente estás siendo muy generoso).
+
+
+**Paso 6: Limpiar**
+
+Una vez concluida la actividad, elimina todos los recursos:
+
+```bash
+kubectl delete -f .
+kubectl delete namespace recursos
+```
+
+Esto limpiará todos los objetos creados.
+
+---
+### Ejercicios
+
+1. **Especificación de recursos (Requests y Limits)**  
+   - Ajusta el Deployment que ya tienes creado para incrementar los `requests` de CPU y memoria en un 50%. Observa si al aplicar estos cambios, algunos Pods quedan pendientes porque el clúster no tiene recursos suficientes.  
+   - Reduce los `limits` de CPU y memoria y analiza cómo afecta el rendimiento o la posibilidad de throttling.
+
+2. **Calidad de servicio (QoS)**  
+   - Crea un Pod sin requests ni limits y determina su QoS. Luego agrégale requests mínimos y vuelve a comprobar su QoS. Describe las diferencias entre las clases “BestEffort” y “Burstable”.  
+   - Ajusta todos los contenedores de un Pod para que tengan exactamente el mismo request y limit de CPU y memoria. Confirma que ahora el Pod sea de tipo “Guaranteed” y compara este resultado con las clases anteriores.
+
+3. **Prioridad y preempción**  
+   - Llena el clúster con Pods de baja prioridad hasta que algunos queden pendientes. Luego despliega un Pod con una PriorityClass alta y observa si la preempción libera espacio para el Pod de alta prioridad.  
+   - Experimenta con una PriorityClass con `preemptionPolicy: Never` y otra con `preemptionPolicy: PreemptLowerPriority`. Describe las diferencias en el comportamiento del clúster ante saturación de recursos.
+
+4. **Cálculo de recursos y ajuste iterativo**  
+   - Observa el uso real de CPU y memoria (por ejemplo, con `kubectl top pods` si está disponible) y determina si los `requests` actuales son apropiados. Si los Pods utilizan mucho menos de lo solicitado, reduce sus requests y verifica si ahora puedes colocar más Pods en el mismo nodo.  
+   - Si notas que con la configuración actual hay frecuente OOMKill (Out Of Memory Kill), incrementa ligeramente el limit de memoria y comprueba si el problema desaparece.
+
+5. **Reducir costos sobreaprovisionando CPU**  
+   - Intenta configurar un Deployment con réplicas que sumen requests de CPU por encima de la capacidad física del nodo. Observa el comportamiento: ¿Los Pods corren todos al mismo tiempo? ¿Hay throttling?  
+   - Ajusta la cantidad de réplicas o los requests de CPU hasta lograr un balance donde no haya excesivo throttling, pero sí un aprovechamiento más óptimo del nodo.
+
+6. **Balanceo entre réplicas de pods y concurrencia interna de pods**  
+   - Despliega una aplicación en dos modalidades: una con muchas réplicas pequeñas y otra con pocas réplicas potentes. Haz pruebas de carga y analiza qué sucede si falla un Pod en cada escenario. ¿Cuál es más resiliente? ¿Cuál consume más recursos globales?  
+   - Ajusta los recursos de un Pod individual para que maneje más concurrencia interna (incrementa requests y limits) y reduce el número de réplicas. Mide la latencia promedio y compárala con la configuración inicial de múltiples réplicas más pequeñas.
+
+7. **Afinando para la realidad del entorno**  
+   - Al cabo de un tiempo, revisa las métricas de uso (CPU, memoria) a lo largo del día. Identifica picos y valles de carga y ajusta los requests en consecuencia.  
+   - Si utilizas un Horizontal Pod Autoscaler (HPA), observa cómo influyen los requests en la lógica de escalado. Ajusta los requests para que el HPA escale en el momento apropiado y no demasiado tarde o demasiado temprano.
+
