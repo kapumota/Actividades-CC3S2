@@ -4,7 +4,7 @@ En Kubernetes, la gestión de recursos es un pilar fundamental para garantizar q
 
 **Programación de Pods**
 
-El scheduling se refiere al proceso por el cual Kubernetes decide en qué nodo ejecutar un Pod. El scheduler utiliza las especificaciones de recursos solicitadas, las afinidades, las tolerancias y las marcas (labels) para determinar el nodo más apropiado. Cuando un Pod declara sus recursos (requests), el scheduler busca un nodo que pueda satisfacer esas demandas. Esto asegura que no se programe un Pod en un nodo sin suficiente CPU o memoria, evitando sobrecargas iniciales.
+La programación  (scheduling) se refiere al proceso por el cual Kubernetes decide en qué nodo ejecutar un Pod. El scheduler utiliza las especificaciones de recursos solicitadas, las afinidades, las tolerancias y las marcas (labels) para determinar el nodo más apropiado. Cuando un Pod declara sus recursos (requests), el scheduler busca un nodo que pueda satisfacer esas demandas. Esto asegura que no se programe un Pod en un nodo sin suficiente CPU o memoria, evitando sobrecargas iniciales.
 
 La elección del nodo no es solo una cuestión de tener recursos disponibles en ese momento, sino también de mantener un equilibrio a largo plazo. Cuantos más Pods sin requests claramente definidos se ejecuten, mayor será la posibilidad de congestión y contención. Además, sin requests, el scheduler no puede tomar decisiones informadas, pudiendo colocar demasiadas cargas de trabajo intensivas en el mismo nodo, resultando en degradación de rendimiento.
 
