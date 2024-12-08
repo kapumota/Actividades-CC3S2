@@ -9,7 +9,7 @@ Además de las herramientas base, a menudo es necesario configurar permisos adec
 Otro aspecto del entorno de desarrollo es la organización del proyecto. Por lo general, se sigue una estructura de directorios clara, en la que el código fuente, los Dockerfiles, los scripts de soporte y la configuración de Docker Compose se encuentran en ubicaciones coherentes. Esto facilita la mantenibilidad y la escalabilidad a largo plazo.
 
 
-**Ejecución de comandos en Docker (Running commands in Docker)**
+**Ejecución de comandos en Docker**
 
 Un contenedor Docker se basa en una imagen, que a su vez se construye a partir de un conjunto de instrucciones en un Dockerfile. Una vez que se cuenta con una imagen, iniciar un contenedor es tan simple como ejecutar `docker run <nombre_imagen>`.
 
