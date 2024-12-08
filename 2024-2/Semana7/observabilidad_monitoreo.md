@@ -2,7 +2,7 @@
 
 La observabilidad es un conjunto de prácticas, herramientas y principios que permiten comprender el estado interno de sistemas complejos a partir de las señales que emiten: métricas, logs, trazas, eventos, perfiles. En entornos modernos distribuidos, como arquitecturas de microservicios corriendo sobre Kubernetes o entornos en la nube, la observabilidad se vuelve esencial para diagnosticar problemas, optimizar el rendimiento y entender el comportamiento del sistema bajo diferentes condiciones.
 
-La pila de Grafana se ha convertido en un estándar de facto para la observabilidad. Con Grafana como plataforma visual, complementada por soluciones nativas o integradas para métricas (Prometheus, Mimir), logs (Loki), trazas (Tempo) y alertas, se obtiene un ecosistema completo para monitorear aplicaciones e infraestructuras. Grafana ofrece paneles personalizables, integraciones con múltiples fuentes de datos, y la capacidad de correlacionar señales de distintos orígenes en una sola interfaz.
+La pila (stack) de Grafana se ha convertido en un estándar de facto para la observabilidad. Con Grafana como plataforma visual, complementada por soluciones nativas o integradas para métricas (Prometheus, Mimir), logs (Loki), trazas (Tempo) y alertas, se obtiene un ecosistema completo para monitorear aplicaciones e infraestructuras. Grafana ofrece paneles personalizables, integraciones con múltiples fuentes de datos, y la capacidad de correlacionar señales de distintos orígenes en una sola interfaz.
 
 Este enfoque unificado facilita la detección de anomalías, el análisis de performance, y el mantenimiento continuo de la salud del sistema. La meta es reducir el MTTR (Mean Time To Recovery), mejorar la confiabilidad y proveer una experiencia consistente a los usuarios finales.
 
@@ -83,7 +83,7 @@ Con las alertas definidas, se necesita un sistema para enrutar y notificar. Aler
 
 Algunas alertas típicas basadas en señales doradas:
 
-- **Latencia alta**: Alertar cuando la latencia p99 supera cierto umbral por un periodo sostenido.
+- **Latencia alta**: Alertar cuando la latencia p99 ( 1% de las requests más lentas están tardando más de lo esperado) supera cierto umbral por un periodo sostenido.
 - **Tasa de errores elevada**: Alertar si más del x% de las requests resultan en errores 5xx.
 - **Saturación**: Alertar si el uso de CPU o memoria supera un cierto umbral por tiempo prolongado.
 - **Falta de tráfico**: Si el servicio deja de recibir requests, podría ser indicio de un problema de enrutamiento.
@@ -98,7 +98,7 @@ El enrutamiento de alertas es crucial. No todas las alertas son iguales ni deber
 Alertmanager provee reglas de enrutado basadas en etiquetas de las alertas, permitiendo flexibilidad. Así se evita inundar a todos con alertas irrelevantes y se mejora el tiempo de respuesta al incidente.
 
 
-**Monitoreo con Métricas usando Grafana Mimir y Prometheus**
+**Monitoreo con métricas usando Grafana Mimir y Prometheus**
 
 Prometheus funciona muy bien en entornos con decenas o cientos de servicios. Sin embargo, a gran escala, la retención de métricas y la alta disponibilidad pueden ser desafiantes. Grafana Mimir surge como una solución escalable, compatible con Prometheus, que puede unificar múltiples Prometheus y ofrecer mayor escalabilidad y resiliencia.
 
@@ -107,7 +107,7 @@ Mimir permite consultas a gran escala, retención prolongada de métricas y sepa
 
 **Trazado técnico con Grafana Tempo**
 
-Las trazas (tracing) proveen visibilidad detallada del camino que recorre una solicitud a través de múltiples servicios. Cuando un request entra, por ejemplo, al frontend, pasa al servicio A, luego a B, llama a una base de datos, etc. El tracing registra cada paso (span) con su tiempo y metadatos. Esto permite identificar en qué servicio se produce el cuello de botella.
+Las trazas (traces) proveen visibilidad detallada del camino que recorre una solicitud a través de múltiples servicios. Cuando un request entra, por ejemplo, al frontend, pasa al servicio A, luego a B, llama a una base de datos, etc. El tracing registra cada paso (span) con su tiempo y metadatos. Esto permite identificar en qué servicio se produce el cuello de botella.
 
 Grafana Tempo es una solución de trazas distribuida que se integra con OpenTelemetry. Al igual que Loki en logs, Tempo busca simplificar el almacenamiento de trazas evitando indexación costosa. Se basa en el concepto de "traceID" para recuperar las trazas y se integra con Grafana, lo que permite saltar de una métrica problemática a la traza que ilustra exactamente dónde se demora la request.
 
@@ -169,7 +169,7 @@ Cada capa de esta plataforma (recolección de datos, almacenamiento, consulta, v
 Este ecosistema favorece la colaboración entre equipos. Desarrolladores consultan paneles para evaluar el impacto de cambios en el código; SREs monitorean la salud global del sistema; Product Owners revisan métricas de rendimiento y disponibilidad para asegurar cumplimiento de SLAs; ingenieros de plataforma optimizan la configuración de la observabilidad para reducir costos y mejorar la eficiencia.
 
 
-En suma, la introducción a la observabilidad con el stack de Grafana, la instrumentación adecuada de aplicaciones e infraestructura, la recolección de logs con Loki, el monitoreo detallado con métricas y señales doradas, la configuración de alertas y su enrutamiento, la adopción de Prometheus y Mimir, el uso de trazas con Tempo, la integración con infraestructuras locales y en la nube, la gestión de incidentes a través de alertas, la automatización con IaC y el diseño minucioso de la arquitectura de la plataforma de observabilidad, conforman un conjunto de prácticas y herramientas que, sin conclusiones finales, delinean un camino para lograr una operación más confiable, eficiente y proactiva en entornos distribuidos modernos.
+En suma, la introducción a la observabilidad con la pila de Grafana, la instrumentación adecuada de aplicaciones e infraestructura, la recolección de logs con Loki, el monitoreo detallado con métricas y señales doradas, la configuración de alertas y su enrutamiento, la adopción de Prometheus y Mimir, el uso de trazas con Tempo, la integración con infraestructuras locales y en la nube, la gestión de incidentes a través de alertas, la automatización con IaC y el diseño minucioso de la arquitectura de la plataforma de observabilidad, conforman un conjunto de prácticas y herramientas que, sin conclusiones finales, delinean un camino para lograr una operación más confiable, eficiente y proactiva en entornos distribuidos modernos.
 
 ---
 ### Ejemplos
@@ -824,7 +824,7 @@ Documenta el diseño, mantén catálogos de paneles estándar, define on-call ro
 
 Con esto se integra la infraestructura de observabilidad en el ciclo de entrega continua.
 
-**Ejercicio 3: Pruebas de carga y Vvalidación de golden signals en el pipeline**
+**Ejercicio 3: Pruebas de carga y validación de golden signals en el pipeline**
 
 - Objetivo: Antes de un despliegue a producción, realizar pruebas de carga y verificar métricas clave.
 - Tareas:
