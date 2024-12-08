@@ -178,7 +178,7 @@ La asignación es dinámica y adaptativa. El kernel no “reserva” bloques fij
 
 - **Pruebas de estrés regulares**: Ejecutar pruebas de carga y ver el consumo máximo ayuda a dimensionar mejor.  
 - **Historiales de métricas**: Analizar métricas de semanas o meses para ver tendencias a largo plazo, detectar si los picos son esporádicos o regulares.  
-- **Ambientes de staging con recursos similares**: Tener un entorno staging que refleje la producción permite experimentar con distintos requests/limits y ver el efecto antes de pasar a producción.  
+- **Entornos de staging con recursos similares**: Tener un entorno staging que refleje la producción permite experimentar con distintos requests/limits y ver el efecto antes de pasar a producción.  
 - **Comunicación con desarrolladores**: A menudo los ingenieros de la aplicación pueden dar pistas sobre cuánta memoria o CPU se requiere, o si la aplicación es CPU-bound o memory-bound.
 
 
@@ -192,7 +192,7 @@ A nivel de namespace, Kubernetes permite definir:
 Estas políticas obligan a un cierto nivel de orden, previniendo situaciones donde un solo Pod intente consumir más recursos de lo razonable.
 
 
-**Resiliencia ante fallos de Nodos**
+**Resiliencia ante fallos de nodos**
 
 La asignación de recursos también influye en la resiliencia. Si un nodo falla, los Pods programados en él deben reprogramarse en otros nodos. Si los requests estaban sobreestimados, el scheduler puede tener dificultades para encontrar un nodo con suficiente capacidad. Si se subestimaron demasiado, puede que existan nodos disponibles, pero el rendimiento será menor del esperado.
 
@@ -400,7 +400,7 @@ spec:
 Este Pod tiene 250m como mínimo garantizado, y puede usar hasta 500m. Si intenta usar más, sufrirá throttling pero no será matado.
 
 
-**Ejemplo 7: Sobrecarga del CPU**
+**Ejemplo 7: Sobreaprovisamiento del CPU**
 
 Supongamos un nodo con 2 CPU. Podemos ejecutar varios Pods con requests de CPU que sumen más de 2 CPU si asumimos que no todos demandarán el 100% al mismo tiempo.
 
@@ -571,7 +571,7 @@ Este Pod en total requiere 400m CPU (300m+100m) y 384Mi de memoria (256Mi+128Mi)
 1. **Configurar recursos en Pods y Deployments**: Aprender a establecer requests y limits de CPU y memoria.
 2. **Calidad de Servicio (QoS)**: Observar cómo cambia la QoS de Pods al variar requests y limits.
 3. **Prioridad y Preempción**: Comprobar cómo Pods de alta prioridad pueden desalojar Pods de menor prioridad en un clúster saturado.
-4. **Sobredimensionamiento (Overcommit)**: Experimentar con el sobreaprovisionamiento de CPU.
+4. **Sobreaprovisamiento (Overcommit)**: Experimentar con el sobreaprovisionamiento de CPU.
 5. **Balancing Pod replicas vs. internal Pod concurrency**: Entender las diferencias entre muchas réplicas pequeñas y pocas réplicas más potentes.
 
 
@@ -794,7 +794,7 @@ spec:
 Deberías ver que algunos Pods sin prioridad son desalojados para dar cabida a los de alta prioridad.
 
 
-**Paso 3: Sobrecarga de CPU**
+**Paso 3: Sobreaprovisamiento de CPU**
 
 Prueba a sobreaprovisionar CPU. Por ejemplo, si tu nodo tiene 2 CPU, intenta correr 20 réplicas con requests de 200m cada una (4 CPUs en total).
 
