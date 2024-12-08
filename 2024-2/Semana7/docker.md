@@ -1090,7 +1090,7 @@ De esta forma, `web` esperará a que `db` pase el healthcheck antes de arrancar.
     docker logs mi_timeserver
     ```
 
-13. **Usnado Docker Compose para probar localmente(Mapping folders)**: `compose_example/`:
+13. **Usando Docker Compose para probar localmente**: `compose_example/`:
     `docker-compose.yml`:
     ```yaml
     version: '3.8'
