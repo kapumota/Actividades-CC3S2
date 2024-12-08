@@ -104,7 +104,7 @@ Una vez que la aplicación está en producción y con health checks configurados
 
    - **Rolling update**: Adecuado por defecto para la mayoría de las aplicaciones. Fácil de configurar en Kubernetes con Deployments. Buena opción si el downtime es inaceptable y las dos versiones pueden coexistir sin problemas.
    
-   - **Re-create**: Útil para entornos simples donde un breve downtime es aceptable y no se desea complejidad. Adecuado para ambientes de desarrollo, staging o aplicaciones internas sin gran impacto.
+   - **Recreate**: Útil para entornos simples donde un breve downtime es aceptable y no se desea complejidad. Adecuado para ambientes de desarrollo, staging o aplicaciones internas sin gran impacto.
    
    - **Blue/green**: Ideal para entornos críticos donde se requiere testear la nueva versión completamente antes de exponerla al tráfico real. Excelente para sistemas con fuertes requerimientos de disponibilidad y donde coexistir versiones es problemático. Permite rollbacks inmediatos.
 
@@ -590,7 +590,7 @@ Con las pruebas realizadas:
 - Escribe en un archivo de texto (sin necesidad de código) qué estrategia usarías en tu entorno real y justifica por qué.  
 - Considera el impacto de readiness y liveness probes en cada estrategia.
 
-**8. Más código: Añadiendo un Health Check TCP**
+**8. Añadiendo un Health Check TCP**
 
 Prueba un tipo diferente de probe (TCP) cambiando la liveness o readiness probe a una verificación TCP:
 
@@ -686,4 +686,3 @@ Si creaste otros services o deployments, elimínalos también.
 8. **Documentación y mejora continua**  
    - Crea un listado de todas las sondas que has configurado (liveness, readiness) con sus tiempos, umbrales y rutas, y explica la razón detrás de cada elección. ¿Cómo mejorarías estos valores a medida que aprendes más sobre el comportamiento de la aplicación?  
    - Describe una posible integración entre las sondas y el sistema de monitoreo: ¿qué alertas podrías generar si las readiness probes fallan con frecuencia o si las liveness probes provocan reinicios recurrentes?
-
