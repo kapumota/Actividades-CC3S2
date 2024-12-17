@@ -1357,5 +1357,442 @@ Para un **árbol de segmentos persistente**:
 
 ### Pregunta 3
 
+Se muestra el **paso a paso muy detallado** siguiendo el flujo descrito en la enunciación. Se incluyen ejemplos concretos de archivos YAML (manifiestos de Kubernetes), Dockerfiles, `docker-compose.yml` y un **pequeño servidor en Python** para simular una aplicación contenedorizada, así como una configuración básica de monitoreo. Se hace énfasis en **cada etapa**: configuración de entorno, construcción de imágenes Docker, despliegue en Kubernetes, y monitoreo con Prometheus/Grafana.
+
+Al final se incluye un **ejemplo de entradas y salidas**.
+
+#### 1. **Configuración de entorno y fundamentos de contenedores**
+
+##### 1.1 Instalar Docker y kubernetes local
+
+- **Opción 1**: Docker Desktop en Windows/Mac (incluye Kubernetes local).  
+- **Opción 2**: `minikube` (requiere VirtualBox o Hypervisor).  
+- **Opción 3**: `kind` (Kubernetes in Docker).
+
+#### 1.2 Estructura de repositorio
+
+Posible árbol de carpetas:
+
+```
+my-k8s-project/
+├── app/
+│   └── server.py          # servidor Python (Flask)
+├── docker/
+│   └── Dockerfile         # multi-stage build (opcional)
+├── k8s/
+│   ├── deployment.yaml    # manifiesto de Deployment
+│   ├── service.yaml       # manifiesto de Service
+│   └── namespace.yaml     # manifiesto de Namespace
+└── monitoring/
+    ├── prometheus.yaml    # configuración de Prometheus
+    ├── grafana.yaml       # configuración de Grafana
+    └── ...
+```
+
+*(Puedes organizar tus archivos de manifiestos en subcarpetas si prefieres.)*
+
+#### 1.3 Uso básico de docker
+
+- **docker run**: Levanta un contenedor a partir de una imagen (por ejemplo `docker run -it ubuntu bash`).
+- **docker ps**: Lista contenedores en ejecución.
+- **docker exec -it <container_id> sh**: Entra al contenedor para explorarlo.
+
+**Salida esperada** en consola cuando exploras contenedores:
+
+```
+CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS          PORTS        NAMES
+d4c6...        ubuntu        "bash"                   10 seconds ago   Up 9 seconds                awesome_jones
+```
+
+#### 2. **Construcción de Imágenes Docker**
+
+Supongamos que nuestra **aplicación** es un servidor Python (Flask).
+
+##### 2.1 Dockerfile (multi-stage build opcional)
+
+Archivo `docker/Dockerfile`:
+
+```dockerfile
+# docker/Dockerfile
+
+# --- STAGE 1: Build/Install dependencies ---
+FROM python:3.10-slim as builder
+
+WORKDIR /app
+COPY app/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt --target /app/deps
+
+# Copiamos el código de la aplicación
+COPY app/server.py /app/
+
+# --- STAGE 2: Final image ---
+FROM python:3.10-slim
+
+WORKDIR /app
+# Copiamos los paquetes instalados desde /app/deps del stage 1
+COPY --from=builder /app/deps /app/deps
+COPY app/server.py /app/
+
+# Ajustamos la variable PYTHONPATH para que Python "vea" los paquetes en /app/deps
+ENV PYTHONPATH="/app/deps"
+
+# Exponer puerto 5000 (Flask)
+EXPOSE 5000
+
+CMD ["python", "server.py"]
+```
+
+**Explicación**:  
+1. **Stage 1 (builder)**: instalamos dependencias en `/app/deps`.  
+2. **Stage 2**: copiamos sólo el resultado final a una imagen base minimal.  
+3. **CMD**: arranca la aplicación Flask en el puerto 5000.
+
+##### 2.2 Compilar y etiquetar la imagen
+
+```bash
+docker build -t myapp:v1.0.0 -f docker/Dockerfile .
+```
+- Esto genera la imagen `myapp:v1.0.0`.
+
+**Salida esperada**:
+
+```
+Sending build context to Docker daemon  ...
+Step 1/11 : FROM python:3.10-slim as builder
+ ---> ...
+Successfully built <image_id>
+Successfully tagged myapp:v1.0.0
+```
+
+##### 2.3 Subir la imagen a un registro (opcional)
+
+```bash
+docker tag myapp:v1.0.0 <tu_registro>/myapp:v1.0.0
+docker push <tu_registro>/myapp:v1.0.0
+```
+
+---
+
+#### 3. **Containerizar la aplicación de servidor y Depuración**
+
+##### 3.1 Servidor Python Flask
+
+Archivo `app/server.py` y `app/requirements.txt`:
+
+```python
+# app/server.py
+from flask import Flask, request
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return "Hello from Flask in Docker!"
+
+@app.route("/health")
+def health():
+    return {"status": "ok"}, 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+```
+
+```text
+# app/requirements.txt
+flask==2.3.2
+```
+
+##### 3.2 Prueba local con Docker
+
+```bash
+docker run -d -p 5000:5000 --name test_myapp myapp:v1.0.0
+```
+- Esto levanta el contenedor mapeando el **puerto 5000** en la máquina host.
+- **Salida esperada** al hacer `curl localhost:5000`:
+
+```
+Hello from Flask in Docker!
+```
+
+##### 3.3 Depuración
+
+- Revisar logs: `docker logs test_myapp`
+- Entrar al contenedor: `docker exec -it test_myapp sh`
+- Probar internamente: `curl localhost:5000/health`
 
 
+#### 4. **Uso de Docker Compose para pruebas locales**
+
+Creamos un archivo `docker-compose.yml` que orqueste **nuestra app** y, por ejemplo, una **base de datos falsa** (o Redis).
+
+```yaml
+version: '3.8'
+services:
+  myapp:
+    image: myapp:v1.0.0
+    ports:
+      - "5000:5000"
+    environment:
+      - MY_ENV_VAR=example
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: myredis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+```
+
+#### 4.1 Validación local
+
+```bash
+docker-compose up
+```
+- **Salida esperada**:
+  ```
+  Creating network "myproject_default" ...
+  Creating myredis ...
+  Creating myproject_myapp_1 ...
+  Attaching to myredis, myproject_myapp_1
+  myredis        | 1:M  ... Running mode=standalone
+  myproject_myapp_1 |  * Serving Flask app 'server'
+  ```
+- Revisar en tu navegador `http://localhost:5000/`.
+
+
+#### 5. **Despliegue en Kubernetes (Arquitectura, YAML, Imperative Commands)**
+
+##### 5.1 Namespace YAML (opcional)
+
+`k8s/namespace.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp-namespace
+```
+
+Aplicar en el cluster:
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+```
+
+**Salida esperada**:
+```
+namespace/myapp-namespace created
+```
+
+##### 5.2 Deployment YAML
+
+`k8s/deployment.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-deployment
+  namespace: myapp-namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp-container
+        image: myapp:v1.0.0
+        ports:
+          - containerPort: 5000
+        env:
+          - name: MY_ENV_VAR
+            value: "example"
+```
+
+##### 5.3 Service YAML
+
+`k8s/service.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+  namespace: myapp-namespace
+spec:
+  selector:
+    app: myapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: NodePort  # para pruebas locales en minikube
+```
+
+##### 5.4 Crear recursos en Kubernetes
+
+```bash
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+```
+
+**Salida esperada**:
+```
+deployment.apps/myapp-deployment created
+service/myapp-service created
+```
+
+##### 5.5 Validación
+
+- `kubectl get pods -n myapp-namespace` → Debe mostrar 2 pods (`myapp-deployment-...`).
+- `kubectl get svc -n myapp-namespace` → Muestra `myapp-service` con un `NodePort`.
+- Con minikube o Docker Desktop Kubernetes, puedes hacer `minikube service myapp-service -n myapp-namespace` para abrir en el navegador.
+
+
+#### 6. **Operaciones automatizadas (Health checks, actualizaciones, recursos)**
+
+##### 6.1 Health Checks con probes
+
+Modificar `deployment.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-deployment
+  namespace: myapp-namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp-container
+        image: myapp:v1.0.0
+        ports:
+          - containerPort: 5000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+```
+
+Esto indica a Kubernetes que verifique cada 10s la ruta `/health`. Si falla, se reinicia el contenedor o se marca como “no listo”.
+
+#### 6.2 Estrategias de actualización
+
+- **RollingUpdate** por defecto en `Deployment`: Kubernetes sustituye paulatinamente pods con la nueva imagen.
+- **Comando imperativo**: `kubectl set image deployment/myapp-deployment myapp-container=myapp:v1.1.0`.
+
+##### 6.3 Gestión de recursos
+
+```yaml
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+```
+
+- Esto se añade en el **spec** del contenedor para que Kubernetes administre la asignación de CPU/memoria.
+
+#### 7. **Observabilidad completa (Logs, métricas, trazas y alertas)**
+
+##### 7.1 Stack de Mmnitoreo (Prometheus + Grafana)
+
+**Ejemplo simplificado** de un `prometheus.yaml` (manifiesto):
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: myapp-namespace
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'myapp'
+        static_configs:
+          - targets: ['myapp-service.myapp-namespace.svc.cluster.local:80']
+```
+
+**Podríamos** usar un operador (Prometheus Operator) o un Deployment + Service para Prometheus. Al final, Prometheus leerá `/metrics` en `myapp` si la aplicación expone métricas. 
+
+##### 7.2 Integración con Grafana
+
+- Desplegar Grafana con un Deployment + Service.  
+- Apuntar Grafana a Prometheus como DataSource.  
+- Crear dashboards para monitorear latencia, uso de CPU, etc.
+
+##### 7.3 Ejemplo de alertas
+
+En un `prometheus.yml`, se configura `alerting` y `rule_files`. Por ejemplo, una regla:
+
+```yaml
+groups:
+- name: HighCPUAlert
+  rules:
+  - alert: HighCPUUsage
+    expr: sum(rate(container_cpu_usage_seconds_total[1m])) by (pod) > 1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pod CPU usage is high"
+```
+
+Si la CPU excede 1 core durante 2 minutos, salta una alerta que se reenvía a Alertmanager.
+
+
+##### **Ejemplo de entradas y salidas**
+
+**Entrada**:  
+1. Subimos la imagen `myapp:v1.0.0` al registro.  
+2. Aplicamos `kubectl apply -f namespace.yaml`, `deployment.yaml`, `service.yaml`.  
+3. Configuramos Prometheus y Grafana.  
+
+**Salida**:  
+- `kubectl get pods -n myapp-namespace`  
+  ```
+  NAME                                  READY   STATUS    RESTARTS   AGE
+  myapp-deployment-7b56f7f895-l4r6t     1/1     Running   0          1m
+  myapp-deployment-7b56f7f895-jk9hk     1/1     Running   0          1m
+  ```
+- `kubectl get svc -n myapp-namespace`  
+  ```
+  NAME             TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+  myapp-service    NodePort   10.100.93.84   <none>        80:30080/TCP   1m
+  ```
+- Acceso por `NodePort`: `curl localhost:30080` → `Hello from Flask in Docker!`
+- Prometheus (si configurado) muestra un job `myapp` (en `Status -> Targets`).  
+- Grafana con un dashboard de métricas que refleja el estado de la aplicación.
+
+
+Con este flujo, tu aplicación se ejecuta en un clúster de Kubernetes local, con logs y métricas disponibles para monitorear y alertar ante problemas.
