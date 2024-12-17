@@ -676,7 +676,6 @@ Un esquema posible de tu proyecto podría lucir así:
 - `requirements.txt`  
   Lista de dependencias (p.ej. `pytest`, `pytest-cov`, etc.).
 
----
 
 #### 2. Tests (TDD - Red)
 
@@ -1108,7 +1107,6 @@ def test_segment_tree_multi_version_with_store():
 
 Así se logra **alta cobertura** (ramas de persistencia y consultas) y se validan múltiples rutas lógicas (MCDC).
 
----
 
 #### 5. Ejemplo de entradas y salidas
 
@@ -1470,8 +1468,6 @@ Successfully tagged myapp:v1.0.0
 docker tag myapp:v1.0.0 <tu_registro>/myapp:v1.0.0
 docker push <tu_registro>/myapp:v1.0.0
 ```
-
----
 
 #### 3. **Containerizar la aplicación de servidor y Depuración**
 
