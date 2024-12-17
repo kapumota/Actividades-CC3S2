@@ -268,7 +268,7 @@ Ahora si corremos `pytest --cov=src` **debería pasar** (GREEN).
 
 **Ejemplo:** Podríamos extraer la lógica de ordenamiento de rutas en un método aparte, o crear una clase que administre la búsqueda. Sin embargo, este ejemplo actual ya es relativamente simple. El refactor depende de la complejidad real del proyecto.
 
-#### Paso 4: Pruebas a la Heurística** 
+#### Paso 4: Pruebas a la heurística** 
 
 En este paso, **las pruebas se centran en la clase `HeuristicaConexion`**, validando que la lógica para determinar si un nodo está habilitado o no funcione correctamente en distintos escenarios. Además, se busca asegurar **cobertura de ramas** para cumplir MCDC (Modified Condition/Decision Coverage).
 
@@ -633,4 +633,729 @@ jobs:
 ```
 
 - Muestra un pipeline sencillo: primero instala dependencias, luego ejecuta tests con cobertura (`pytest-cov`) y finalmente imprime el reporte de complejidad (radon).
+
+### Pregunta 2
+Se muestra un desarrollo **paso a paso**, muy detallado, de cómo construir una **estructura de datos persistente** usando **un árbol de segmentos multi-versión**. Se incluyen:
+
+1. **Test** (TDD: Red-Green-Refactor).  
+2. **Implementación de la clase** de árbol de segmentos persistente.  
+3. **Mocks/Stubs** para simular accesos a “base de datos” de versiones.  
+4. **Ejemplos de entradas y salidas**.  
+5. **Estructura Docker** para ejecutar las pruebas automáticamente.  
+
+Se enfatiza la separación de responsabilidades (arquitectura SOLID), la cobertura de pruebas, y la complejidad ciclomática limitada.
+
+#### 1. Estructura de archivos y directorios
+
+Un esquema posible de tu proyecto podría lucir así:
+
+```
+.
+├── Dockerfile
+├── requirements.txt
+├── src
+│   ├── persistent_segment_tree.py
+│   ├── version_store.py
+│   └── __init__.py
+└── tests
+    ├── test_segment_tree.py
+    ├── test_version_store.py
+    └── __init__.py
+```
+
+- `src/persistent_segment_tree.py`  
+  Lógica principal del árbol de segmentos multi-versión.
+- `src/version_store.py`  
+  Clases o interfaces que simulan persistencia (mocks/stubs).
+- `tests/test_segment_tree.py`  
+  Pruebas unitarias sobre la construcción, actualización, consultas de rango en el árbol persistente.
+- `tests/test_version_store.py`  
+  Pruebas unitarias/mocks de la capa de “persistencia” (si se requiere).
+- `Dockerfile`  
+  Construye el entorno y ejecuta pytest automáticamente.
+- `requirements.txt`  
+  Lista de dependencias (p.ej. `pytest`, `pytest-cov`, etc.).
+
+---
+
+#### 2. Tests (TDD - Red)
+
+##### 2.1 `tests/test_segment_tree.py`
+
+Primero, escribimos los tests sin implementación (fase “RED”). Se incluyen varios escenarios:
+
+```python
+# tests/test_segment_tree.py
+import pytest
+from unittest.mock import MagicMock
+
+from src.persistent_segment_tree import PersistentSegmentTree
+
+def test_creacion_arbol_base():
+    """
+    Verifica la creación de la versión 0 del árbol 
+    a partir de un array inicial.
+    """
+    array_inicial = [2, 1, 5, 3, 7]  # Ejemplo de datos
+    pst = PersistentSegmentTree(array_inicial)
+    
+    # Consultamos la suma total [0..4] (versión 0)
+    assert pst.query(0, 4, version=0) == sum(array_inicial), "Debe coincidir con la suma total del array inicial"
+
+def test_actualizacion_crea_nueva_version():
+    """
+    Verifica que al actualizar un índice se genere una nueva versión 
+    y que la versión anterior permanezca inmutable.
+    """
+    array_inicial = [2, 1, 5, 3, 7]
+    pst = PersistentSegmentTree(array_inicial)
+    # Versión 0 creada por defecto
+
+    # Actualizamos posición 2 (valor=5) -> nuevo valor = 10
+    pst.update(index=2, new_value=10, version=0)  # Esto debe crear versión 1
+    
+    # Consulta en versión 0 no debe verse afectada
+    suma_v0 = pst.query(0, 4, version=0)
+    assert suma_v0 == sum(array_inicial), "Versión 0 debe mantenerse sin cambios"
+    
+    # Consulta en versión 1 debe reflejar el cambio
+    suma_v1 = pst.query(0, 4, version=1)
+    assert suma_v1 == (2 + 1 + 10 + 3 + 7), "Versión 1 debe incluir el valor actualizado"
+
+def test_consultas_en_distintas_versiones():
+    """
+    Se realizan múltiples actualizaciones y se comprueba 
+    que cada versión devuelva el resultado esperado.
+    """
+    array_inicial = [0, 0, 0, 0, 0]
+    pst = PersistentSegmentTree(array_inicial)
+
+    # Versión 0: todos ceros
+    assert pst.query(0, 4, version=0) == 0
+
+    # 1ª actualización -> versión 1
+    pst.update(index=1, new_value=5, version=0)
+    assert pst.query(0, 4, version=1) == 5
+
+    # 2ª actualización -> versión 2
+    pst.update(index=3, new_value=2, version=1)
+    assert pst.query(0, 4, version=2) == 7  # (0 + 5 + 0 + 2 + 0)
+
+    # Verificar versiones anteriores siguen intactas
+    assert pst.query(0, 4, version=0) == 0
+    assert pst.query(0, 4, version=1) == 5
+```
+
+**Nota**:  
+- `PersistentSegmentTree(array_inicial)` crea la **versión 0**.  
+- Cada llamada a `update(...)` genera una **nueva versión** (1, 2, etc.) sin mutar versiones previas.  
+- `query(left, right, version=X)` consulta la suma (u otra operación) en esa versión específica.
+
+Si ejecutamos ahora `pytest tests/` (o `pytest --cov=src`), fallará por falta de implementación (RED).
+
+
+#### 3. Implementación (TDD - Green)
+
+##### 3.1 `src/persistent_segment_tree.py`
+
+Implementamos un árbol segmentado **persistente**. La idea clave: **al actualizar un nodo**, se crea una **nueva** cadena de nodos (copias) hasta la raíz, compartiendo los subárboles que no han cambiado.
+
+```python
+# src/persistent_segment_tree.py
+
+class SegmentTreeNode:
+    """
+    Nodo de un Segment Tree persistente:
+    - start, end: rango que cubre el nodo
+    - value: suma (o la operación agregada)
+    - left, right: referencias a nodos hijos
+    """
+    __slots__ = ['start', 'end', 'value', 'left', 'right']
+    
+    def __init__(self, start, end, value=0, left=None, right=None):
+        self.start = start
+        self.end = end
+        self.value = value
+        self.left = left
+        self.right = right
+
+def build_tree(arr, start, end):
+    """ Construye un árbol de segmentos a partir de arr[start..end]. """
+    if start == end:
+        # Hoja
+        return SegmentTreeNode(start, end, value=arr[start])
+    
+    mid = (start + end) // 2
+    left_child = build_tree(arr, start, mid)
+    right_child = build_tree(arr, mid+1, end)
+    root = SegmentTreeNode(start, end, left_child.value + right_child.value, left_child, right_child)
+    return root
+
+def query_tree(node, qstart, qend):
+    """ Consulta la suma en el rango [qstart..qend] usando un árbol de segmentos. """
+    if node is None or qend < node.start or qstart > node.end:
+        return 0  # rango fuera del nodo
+    
+    if qstart <= node.start and node.end <= qend:
+        # El nodo completo está dentro del rango
+        return node.value
+
+    # Dividir en los hijos
+    return query_tree(node.left, qstart, qend) + query_tree(node.right, qstart, qend)
+
+def update_tree(node, index, new_value):
+    """
+    Actualiza el árbol de forma PERSISTENTE en la posición 'index' asignando 'new_value'.
+    Retorna la NUEVA RAÍZ (nodo clonado).
+    """
+    if node.start == node.end == index:
+        # Clon de la hoja con el valor modificado
+        return SegmentTreeNode(node.start, node.end, new_value)
+    
+    mid = (node.start + node.end) // 2
+    new_left = node.left
+    new_right = node.right
+
+    if index <= mid:
+        # clonamos la rama izquierda
+        new_left = update_tree(node.left, index, new_value)
+    else:
+        # clonamos la rama derecha
+        new_right = update_tree(node.right, index, new_value)
+
+    new_node = SegmentTreeNode(
+        node.start, 
+        node.end, 
+        new_left.value + new_right.value, 
+        new_left, 
+        new_right
+    )
+    return new_node
+
+class PersistentSegmentTree:
+    """
+    Estructura principal que maneja múltiples versiones de un Segment Tree.
+    versions: lista que almacena la raíz de cada versión.
+    """
+    def __init__(self, arr):
+        # Construimos la versión 0
+        self.versions = []
+        root = build_tree(arr, 0, len(arr)-1)
+        self.versions.append(root)
+
+    def update(self, index, new_value, version=0):
+        """
+        Crea una nueva versión del árbol al actualizar el valor 
+        en 'index' basado en la 'version' especificada.
+        """
+        old_root = self.versions[version]
+        new_root = update_tree(old_root, index, new_value)
+        self.versions.append(new_root)  # la nueva versión se almacena al final
+
+    def query(self, start, end, version=0):
+        """
+        Consulta la suma en el rango [start..end] en la versión especificada.
+        """
+        root = self.versions[version]
+        return query_tree(root, start, end)
+```
+
+#### Explicaciones clave
+
+1. **`SegmentTreeNode`**: nodo con `start, end, value, left, right`. 
+2. **`build_tree(arr, start, end)`**: Construye recursivamente el árbol base.  
+3. **`query_tree(node, qstart, qend)`**: Consulta suma en rango. Devuelve 0 si no hay solapamiento, o la suma combinada si se solapa.  
+4. **`update_tree(node, index, new_value)`**: **Crea nodos clonados** en la ruta de actualización.  
+   - Si `node.start == node.end == index`, se crea una **nueva hoja** con `new_value`.  
+   - Caso contrario, se copian los subárboles para mantener la persistencia.  
+5. **`PersistentSegmentTree`**:
+   - `self.versions` guarda la raíz de cada versión.  
+   - `update(...)` toma la raíz de la `version` previa, ejecuta `update_tree` y pone la nueva raíz en la lista.  
+   - `query(...)` solo consulta la raíz de la versión dada.  
+
+Ahora, si volvemos a correr:
+```bash
+pytest --cov=src --cov-report=term-missing
+```
+Deberíamos ver que los tests pasan (GREEN).
+
+#### Paso 4: Mocks y Stubs**
+
+En el contexto de una **estructura de datos persistente** (árbol de segmentos multi-versión), el **uso de Mocks y Stubs** se vuelve crucial para aislar dependencias y facilitar las pruebas unitarias (TDD).
+
+
+##### 4.1 **¿Por qué usar Mocks y Stubs en un segment tree Persistente?**
+
+1. **Stubs**:
+   - **Objetivo**: Proveer **datos “fijos”** o **comportamientos “simples”** en pruebas, sin incluir lógica compleja.  
+   - **Uso típico**: Inicializar el árbol con un array predefinido (por ejemplo, ID de usuarios, cargas iniciales, etc.), de manera que **no dependamos** de una fuente real (base de datos, archivo, red) cada vez que corremos los tests.  
+   - **Resultado**: Las pruebas son reproducibles, rápidas y no requieren configurar un backend real.
+
+2. **Mocks**:
+   - **Objetivo**: **Simular dependencias** de forma que podamos verificar **interacciones** (número de llamadas, argumentos, etc.).  
+   - **Uso típico**: Cuando actualizamos el árbol y queremos “persistir” la nueva versión, podemos **mockear** la capa de acceso a disco o base de datos. De este modo, nuestro **árbol persistente** no depende de implementación real y podemos probar la lógica de versionado sin un DB real.
+   - **Resultado**: Aislamos los tests de detalles externos. Podemos hacer **assert** de cuántas veces se llamó a la persistencia, con qué parámetros, etc.
+
+
+##### 4.2 **Stubs para datos iniciales**
+
+Imaginemos que los datos del árbol de segmentos representan **cargas por ID de usuario**. En un proyecto real, se podría leer de un CSV, una base de datos, etc. En **TDD**, no queremos depender de ello. Así, **creamos un Stub** que devuelva siempre un array fijo.
+
+```python
+# tests/stubs.py
+
+def stub_array_inicial_usuarios():
+    """
+    Retorna un array ficticio de cargas de usuarios por ID. 
+    Con fines de prueba, los datos son constantes.
+    """
+    return [10, 3, 7, 6, 2, 9]  # Ejemplo de cargas/valores
+```
+
+Luego, **en nuestros tests** (`tests/test_segment_tree.py`), podemos usarlo:
+
+```python
+from tests.stubs import stub_array_inicial_usuarios
+from src.persistent_segment_tree import PersistentSegmentTree
+
+def test_arbol_con_stub_usuarios():
+    arr_usuarios = stub_array_inicial_usuarios()
+    pst = PersistentSegmentTree(arr_usuarios)
+
+    # Hacemos consultas de rango
+    assert pst.query(0, 5, version=0) == sum(arr_usuarios), "Verifica la suma inicial"
+
+    # Realizamos una actualización en la versión 0
+    pst.update(index=2, new_value=20, version=0)  # Crea la versión 1
+    # Versión 0 debe mantenerse igual (7 en índice 2)
+    assert pst.query(2, 2, version=0) == 7
+    # Versión 1 refleja el cambio
+    assert pst.query(2, 2, version=1) == 20
+```
+
+**Ventajas**:
+- El stub hace que el test sea **predecible** y **no dependiente** de configuraciones externas.
+- Podemos modificar el stub con diferentes datos para probar distintos escenarios.
+
+
+#### 4.3 **Mocks para la “base de datos” de versiones**
+
+##### 4.3.1 Contexto
+
+En un **árbol persistente** multi-versión, cada actualización crea una **nueva raíz**. En un escenario real, querríamos **almacenar** esta raíz (o la estructura resultante) en algún sistema de persistencia (disco, base de datos, etc.).  
+- Para **probar** la integración sin tener que implementar la persistencia real, usamos un **Mock** que reemplace la capa de “version store”.
+
+##### 4.3.2 Interfaz de persistencia
+
+Primero, definimos una interfaz abstracta o clase base:
+
+```python
+# src/version_store.py
+
+class VersionStoreDB:
+    """
+    Interfaz para la capa de persistencia de versiones. 
+    Esta clase abstracta define métodos que deben implementarse
+    en la persistencia real (ej. base de datos, archivo, etc.)
+    """
+    def save_version(self, version_id, root_node):
+        raise NotImplementedError("save_version debe ser implementado")
+
+    def load_version(self, version_id):
+        raise NotImplementedError("load_version debe ser implementado")
+```
+
+**NOTA**: La **inversión de dependencias** (D en SOLID) sugiere que `PersistentSegmentTree` no debe crear ni manejar directamente la lógica de persistencia. En su lugar, recibiría un **objeto que implemente** `VersionStoreDB`. Así las pruebas no dependen de la implementación final.
+
+##### 4.3.3 Implementación de un Mock
+
+En las pruebas, usamos `unittest.mock.MagicMock` para crear un objeto que imita la interfaz `VersionStoreDB`:
+
+```python
+# tests/test_version_store.py
+import pytest
+from unittest.mock import MagicMock
+from src.version_store import VersionStoreDB
+
+def test_mock_version_store():
+    # Creamos un mock que "finge" ser una VersionStoreDB
+    mock_db = MagicMock(spec=VersionStoreDB)
+    
+    # Simulamos guardar la versión 0
+    mock_db.save_version(0, "root_node_mock")
+    mock_db.save_version.assert_called_once_with(0, "root_node_mock")
+
+    # Configuramos el retorno de load_version
+    mock_db.load_version.return_value = "mocked_root_node"
+    loaded_root = mock_db.load_version(0)
+    assert loaded_root == "mocked_root_node"
+    
+    # Verificar que load_version se llamó con el argumento 0
+    mock_db.load_version.assert_called_with(0)
+```
+
+##### ¿Qué estamos testeando aquí?
+
+- **Cómo** nuestra clase (o sistema) **interactúa** con la capa de persistencia.  
+- Si nuestro `PersistentSegmentTree` en algún momento hace `version_store.save_version(nueva_version, root_node)`, el test con mock comprueba que el método se llamó con los **parámetros correctos** (versión, nodo raíz, etc.).  
+
+##### Integración con `PersistentSegmentTree`
+
+Podríamos inyectar (`Dependency Injection`) una instancia de `VersionStoreDB` en el constructor de `PersistentSegmentTree`. Por ejemplo:
+
+```python
+# src/persistent_segment_tree.py (versión inyectando store)
+
+class PersistentSegmentTree:
+    def __init__(self, arr, store=None):
+        """
+        store: objeto que implementa la interfaz VersionStoreDB (puede ser Mock en tests).
+        """
+        root = build_tree(arr, 0, len(arr)-1)
+        self.versions = [root]
+        self.store = store
+        if self.store:
+            self.store.save_version(0, root)
+
+    def update(self, index, new_value, version=0):
+        old_root = self.versions[version]
+        new_root = update_tree(old_root, index, new_value)
+        new_version_id = len(self.versions)  # p. ej. 1, 2, etc.
+        self.versions.append(new_root)
+
+        if self.store:
+            self.store.save_version(new_version_id, new_root)
+
+    def query(self, start, end, version=0):
+        root = self.versions[version]
+        return query_tree(root, start, end)
+```
+
+En un test, podemos **inyectar** un `mock_db`:
+
+```python
+from unittest.mock import MagicMock
+from src.version_store import VersionStoreDB
+
+def test_persistent_tree_con_mock_db():
+    mock_db = MagicMock(spec=VersionStoreDB)
+    arr_inicial = [1,2,3]
+    pst = PersistentSegmentTree(arr_inicial, store=mock_db)
+
+    # Se debe haber llamado save_version para la versión 0
+    mock_db.save_version.assert_called_once()
+
+    # Actualizamos para crear versión 1
+    pst.update(index=1, new_value=10, version=0)
+    
+    # Se debería llamar save_version para la nueva versión (1)
+    mock_db.save_version.assert_called_with(1, pst.versions[1])
+```
+
+
+#### 4.5 **Escenarios comunes de Mocks/Stubs**
+
+1. **Stub de array inicial**:  
+   - Entregar datos fijos sin lógica, p. ej. `[10, 3, 7, 6, 2, 9]`.
+
+2. **Stub de configuración**:  
+   - Podríamos tener un stub que devuelva configuraciones (por ejemplo, “autenticación SSH simulada” para acceder a la versión actual), sin hacer la autenticación real.
+
+3. **Mock de capa de persistencia**:  
+   - Controlar y verificar la interacción con un “VersionStoreDB”.
+
+4. **Mock de notificaciones**:  
+   - Si el árbol envía notificaciones al crear una nueva versión, podríamos mockear esa lógica.  
+
+#### 4.6 **Ejemplo completo de un test combinando Stub + Mock**
+
+```python
+import pytest
+from unittest.mock import MagicMock
+
+from tests.stubs import stub_array_inicial_usuarios
+from src.persistent_segment_tree import PersistentSegmentTree
+from src.version_store import VersionStoreDB
+
+def test_segment_tree_multi_version_with_store():
+    # 1) Stub: Obtener array inicial
+    arr_inicial = stub_array_inicial_usuarios()  # [10, 3, 7, 6, 2, 9]
+
+    # 2) Mock: Capa de persistencia
+    mock_db = MagicMock(spec=VersionStoreDB)
+
+    # 3) Crear el árbol persistente inyectando la capa de persistencia mock
+    pst = PersistentSegmentTree(arr_inicial, store=mock_db)
+
+    # 4) Verificar que guardó la versión 0
+    mock_db.save_version.assert_called_with(0, pst.versions[0])
+
+    # 5) Actualizar un índice para crear la versión 1
+    pst.update(index=2, new_value=20, version=0)
+    # Revisar si se llamó a save_version con la nueva versión (1) y el nuevo root
+    mock_db.save_version.assert_called_with(1, pst.versions[1])
+
+    # 6) Validamos la lógica de queries en versiones distintas
+    assert pst.query(0, 5, version=0) == sum(arr_inicial), "Versión 0 inalterada"
+    assert pst.query(2, 2, version=1) == 20, "Versión 1 con el valor actualizado en index=2"
+```
+
+- **Paso 1**: Obtenemos los **datos iniciales** a través del **stub**.
+- **Paso 2**: Creamos un **mock** que simula persistencia (`VersionStoreDB`).
+- **Paso 3**: Inyectamos el mock al **constructor** de `PersistentSegmentTree`.
+- **Paso 4 y 5**: Comprobamos que efectivamente se llamó a `save_version` en la versión 0 y luego en la versión 1 tras la actualización.
+- **Paso 6**: Hacemos queries para confirmar que se crearon las versiones correctamente.
+
+Así se logra **alta cobertura** (ramas de persistencia y consultas) y se validan múltiples rutas lógicas (MCDC).
+
+---
+
+#### 5. Ejemplo de entradas y salidas
+
+**Entrada**  
+- Array inicial: `[2, 1, 5, 3, 7]`  
+- Actualización 1 (versión 0): index = 2 (de 5 a 10) → se crea versión 1  
+- Consulta (rango `[0..4]`, versión 0)  
+- Consulta (rango `[0..4]`, versión 1)
+
+**Salida**  
+- **Consulta versión 0**: `2 + 1 + 5 + 3 + 7 = 18`  
+- **Consulta versión 1**: `2 + 1 + 10 + 3 + 7 = 23`  
+
+Cada nueva versión es un nuevo árbol raíz (en `versions[1]` para esta actualización).
+
+#### 6. Dockerfile
+
+Al igual que en el Ejercicio 1, podemos crear un `Dockerfile` para compilar y ejecutar los tests automáticamente:
+
+```dockerfile
+# Dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . /app
+
+CMD ["pytest", "--cov=src", "--cov-report=term-missing"]
+```
+
+#### 6.1 `requirements.txt`
+```text
+pytest
+pytest-cov
+```
+*(Agregar más dependencias si necesitas.)*
+
+Para construir e iniciar el contenedor:
+```bash
+docker build -t persistent_segment_tree .
+docker run persistent_segment_tree
+```
+El contenedor ejecutará los tests y mostrará el reporte de cobertura.
+
+
+#### 7. Métricas de cobertura y complejidad
+
+1. **Cobertura**: con `pytest --cov=src --cov-report=term-missing`, se obtiene la cobertura de líneas y ramas.  
+2. **Complejidad Ciclomática**: se pueden usar herramientas como `radon` o `lizard`:
+
+   ```bash
+   pip install radon
+   radon cc src -s
+   ```
+   Revisar que la complejidad no exceda niveles manejables (ideal < 10 por método).
+
+En este paso se busca **analizar la calidad** de nuestro código desde dos frentes principales:
+
+1. **Cobertura** (branch coverage, MCDC, etc.).  
+2. **Complejidad ciclomática**.
+
+Se muestran **ejemplos más elaborados** de cómo obtener estos reportes y cómo interpretarlos, especialmente para una estructura tan compleja como un **árbol de segmentos persistente**. 
+
+
+##### 7.1 **Cobertura (Coverage)**
+
+La **cobertura de tests** describe qué fracción del código ha sido ejecutado al correr nuestras pruebas. Distintas métricas de cobertura:
+
+1. **Line Coverage**: Porcentaje de líneas ejecutadas.  
+2. **Branch Coverage**: Cantidad de ramas de decisión (ej. `if`, `else`) que se ejercen en las pruebas.  
+3. **MCDC (Modified Condition / Decision Coverage)**: Requiere que cada condición booleana se evalúe a `True` y `False` en contextos distintos que cambien efectivamente la decisión final.
+
+#### 7.1.1 Ejemplo avanzada con `pytest-cov`
+
+- **Archivo**: `pytest.ini` (o `setup.cfg`) puede incluir configuraciones personalizadas de `pytest-cov`.
+
+```ini
+# pytest.ini
+[pytest]
+addopts = --cov=src --cov-report=term-missing:skip-covered
+```
+
+- `--cov=src` mide cobertura sobre el paquete `src/`.  
+- `--cov-report=term-missing:skip-covered` muestra en la terminal las líneas no cubiertas, pero omite los archivos con 100% coverage.
+
+Al ejecutar:
+```bash
+pytest
+```
+Se integran automáticamente esas opciones (`addopts`). El reporte en consola podría verse así (tabla de markdown):
+
+```
+---------- coverage: platform linux, python 3.10 ----------
+Name                                      Stmts   Miss Branch BrPart  Cover
+---------------------------------------------------------------------------
+src/persistent_segment_tree.py              60      3     14      2    90%
+src/version_store.py                         8      1      0      0    88%
+---------------------------------------------------------------------------
+TOTAL                                       68      4     14      2    90%
+```
+
+- `Branch` y `BrPart` indican cuántas ramas totales y cuántas quedaron parcialmente cubiertas. Para **aproximar MCDC**, debemos **verificar manualmente** que cada condición haya sido testeada con distintos valores booleanos.
+
+**¿Cómo mejorar la coverage?**  
+- **Agregar tests** que disparen las ramas no cubiertas. Por ejemplo:  
+  - *¿Qué pasa si hacemos una `query` fuera de los límites del array?*  
+  - *¿Qué pasa si `version` está fuera del rango de `versions` almacenadas?*  
+
+**Sugerencia**: Revisar la salida de `--cov-report=term-missing` para ver **línea exacta** sin cubrir. Agregar un test que llame a esa línea/condición.
+
+
+#### 7.1.2 Ejemplo MCDC en árbol segmentado persistente
+
+Si tenemos una condición dentro de `update_tree`, por ejemplo:
+```python
+def update_tree(node, index, new_value):
+    if node.start == node.end == index:
+        # ...
+    else:
+        mid = (node.start + node.end) // 2
+        # ...
+```
+Para **MCDC**, hay condiciones implicadas:
+1. `node.start == node.end`
+2. `node.start == index`
+3. `node.end == index`
+
+Querrás tests donde:
+- El nodo sea **una hoja** (`start == end`) pero `index` no coincida con `start` (posible error o edge case).
+- El nodo sea una hoja *y* `start == index`.  
+- El nodo *no* sea hoja (`start < end`).
+
+Cada variación ayuda a **cubrir** o **descubrir** ramas lógicas sutiles.
+
+
+#### 7.2 **Complejidad ciclomática**
+
+La **complejidad ciclomática** mide el **número de rutas independientes** a través de un bloque de código. Una medida alta sugiere que el método o clase es difícil de entender, probar y mantener.
+
+Para medirla en Python, se pueden usar herramientas como **Radon** o **Lizard**.
+
+##### 7.2.1 Uso de Radon
+
+```bash
+pip install radon
+```
+
+Luego, para analizar la complejidad de tu proyecto:
+
+```bash
+radon cc src -s
+```
+
+Ejemplo de salida (hipotética) para nuestro proyecto:
+
+```
+src/persistent_segment_tree.py
+    F  25:0  build_tree - A (complexity 2)
+    F  40:0  query_tree - B (complexity 5)
+    F  60:0  update_tree - B (complexity 6)
+    C  80:0  PersistentSegmentTree - A (complexity 1)
+
+src/version_store.py
+    C   5:0  VersionStoreDB - A (complexity 0)
+```
+
+- Cada función obtiene una calificación (A, B, C...), donde **A** indica complejidad muy baja (1-5).  
+- **B** indica rangos de 6 a 10, que aún puede considerarse manejable.  
+- C (11-20) o superior sugiere refactorización.
+
+**Interpretación**:  
+- `update_tree` con **complejidad 6** → se considera “B”, probablemente OK, pero si sube a 12 o más, conviene romper la lógica en funciones auxiliares.
+
+#### Estrategias para reducir complejidad
+1. **Separar** la lógica de persistencia de la lógica de actualización.  
+2. Evitar bucles anidados o condiciones `if` muy extensas.  
+3. Extraer partes repetitivas en funciones más pequeñas y específicas (Single Responsibility).
+
+
+#### 7.3 **Ejemplo de un Pipeline Avanzado (CI/CD)**
+
+En un entorno real, **todo** esto se integra en un pipeline (GitHub Actions, GitLab CI, Jenkins) que corre:
+
+1. **Tests unitarios con cobertura** (`pytest --cov`).  
+2. **Reporte de complejidad ciclomática** (Radon o Lizard).  
+3. **Opcional**: gating rules (por ejemplo, rechazar un merge request si la cobertura baja de 90% o si la complejidad se dispara).
+
+**Ejemplo**: *GitHub Actions* (`.github/workflows/ci.yml`):
+
+```yaml
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install radon
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=src --cov-report=term-missing
+
+      - name: Analyze cyclomatic complexity with Radon
+        run: |
+          radon cc src -s
+```
+
+La salida del job mostrará:
+1. El reporte de cobertura.  
+2. El reporte de complejidad.  
+
+Esto permite **monitorizar** continuamente la calidad. Si un desarrollador introduce un método con `complexity = 15`, o reduce la cobertura por debajo de cierto umbral, se le notificará para refactorizar o añadir más tests.
+
+#### 7.4 **Ejemplos específicos de ramas/condiciones** 
+
+Para un **árbol de segmentos persistente**:
+
+- **Ramas** a cubrir en `update_tree`:
+  - Actualizar un nodo **hoja**.
+  - Actualizar un nodo **intermedio** (requiere clonar la rama izquierda o derecha).
+  - Edge cases: índices fuera de rango (¿manejado por excepción o return?).  
+
+- **Ramas** a cubrir en `query_tree`:
+  - Rango de consulta completamente **fuera** del rango del nodo (retorna 0).
+  - Rango de consulta que **encapsula** al nodo (retorna `node.value` directamente).
+  - Rango de consulta **parcial** (dividir recursivamente en hijos).
+
+- **Versión no existente**:  
+  - Si alguien llama `pst.query(..., version=999)` y solo existen 5 versiones. ¿Qué pasa? Debería ser un error controlado o excepción.  
+  - Generar un test para esa rama, o manejarlo con un `if version >= len(self.versions): ...`  
+
+**Cobertura** y **complejidad** deben reflejar que cada una de estas situaciones ha sido probada por al menos un test.
+
+### Pregunta 3
+
+
 
